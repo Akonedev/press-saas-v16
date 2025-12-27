@@ -1,0 +1,178 @@
+# =============================================================================
+# .gitignore - ERP SaaS Cloud PRESSE v16
+# Frappe/ERPNext Docker-based project
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Python
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+.env.local
+
+# -----------------------------------------------------------------------------
+# Node.js / Frontend
+# -----------------------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# -----------------------------------------------------------------------------
+# IDE / Editors
+# -----------------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# -----------------------------------------------------------------------------
+# OS Generated
+# -----------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.tmp
+
+# -----------------------------------------------------------------------------
+# Frappe / ERPNext Specific
+# -----------------------------------------------------------------------------
+sites/*/private/
+sites/*/public/files/
+sites/*/logs/
+sites/*/site_config.json
+sites/common_site_config.json
+sites/apps.txt
+sites/currentsite.txt
+*.pyc
+*.pyo
+
+# Frappe bench
+logs/
+*.log
+*.error.log
+
+# -----------------------------------------------------------------------------
+# Docker / Container
+# -----------------------------------------------------------------------------
+docker/volumes/
+docker/data/
+*.tar
+*.tar.gz
+
+# Docker compose override for local dev (keep example)
+# docker/compose/docker-compose.override.yml
+
+# -----------------------------------------------------------------------------
+# Secrets & Environment
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+config/.env
+!config/.env.example
+config/secrets/
+*.pem
+*.key
+*.crt
+*.p12
+credentials.json
+secrets.yaml
+secrets.yml
+
+# -----------------------------------------------------------------------------
+# Database
+# -----------------------------------------------------------------------------
+*.sql
+*.sql.gz
+*.bak
+dump/
+
+# -----------------------------------------------------------------------------
+# MinIO / S3
+# -----------------------------------------------------------------------------
+minio-data/
+.minio.sys/
+
+# -----------------------------------------------------------------------------
+# SSL / Certificates (keep self-signed examples)
+# -----------------------------------------------------------------------------
+docker/config/traefik/certs/*.pem
+docker/config/traefik/certs/*.key
+docker/config/traefik/acme/acme.json
+
+# -----------------------------------------------------------------------------
+# Monitoring
+# -----------------------------------------------------------------------------
+prometheus-data/
+grafana-data/
+wazuh-data/
+
+# -----------------------------------------------------------------------------
+# Test & Coverage
+# -----------------------------------------------------------------------------
+.coverage
+htmlcov/
+.tox/
+.nox/
+.pytest_cache/
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# -----------------------------------------------------------------------------
+# Build artifacts
+# -----------------------------------------------------------------------------
+*.o
+*.a
+*.out
+*.class
+*.jar
+*.war
+
+# -----------------------------------------------------------------------------
+# Temporary files
+# -----------------------------------------------------------------------------
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
