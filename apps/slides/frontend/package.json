@@ -1,0 +1,42 @@
+{
+	"name": "frappe-ui-frontend",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"serve": "vite preview"
+	},
+	"dependencies": {
+		"@tiptap/extension-bullet-list": "^2.0.3",
+		"@tiptap/extension-color": "^2.0.3",
+		"@tiptap/extension-list-item": "^2.0.3",
+		"@tiptap/extension-text-align": "^2.0.3",
+		"@tiptap/extension-text-style": "^2.0.3",
+		"@tiptap/extension-underline": "^2.0.3",
+		"@tiptap/starter-kit": "^2.0.3",
+		"@tiptap/vue-3": "^2.0.3",
+		"dayjs": "^1.11.13",
+		"feather-icons": "^4.29.2",
+		"frappe-ui": "0.1.168",
+		"highlight.js": "^11.11.1",
+		"html2canvas": "^1.4.1",
+		"lodash": "^4.17.21",
+		"lucide-vue-next": "^0.439.0",
+		"tinycolor2": "^1.6.0",
+		"vue": "^3.5.4",
+		"vue-router": "^4.2.2",
+		"vuedraggable": "^4.1.0"
+	},
+	"devDependencies": {
+		"@vitejs/plugin-vue": "^4.2.3",
+		"autoprefixer": "^10.4.2",
+		"postcss": "^8.4.5",
+		"prettier": "^3.6.1",
+		"prettier-plugin-tailwindcss": "^0.6.13",
+		"tailwindcss": "^3.4.3",
+		"typescript": "^5.5.4",
+		"vite": "^4.4.9"
+	}
+}

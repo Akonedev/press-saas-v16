@@ -1,0 +1,19 @@
+{
+ "app": "wiki",
+ "creation": "2025-12-28 03:34:27.900406",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "App",
+ "idx": 1,
+ "label": "Wiki",
+ "link": "/app/wiki",
+ "link_type": "External",
+ "logo_url": "/assets/wiki/images/wiki-logo.png",
+ "modified": "2025-12-28 03:34:27.900406",
+ "modified_by": "Administrator",
+ "name": "Wiki",
+ "owner": "Administrator",
+ "roles": [],
+ "standard": 1
+}

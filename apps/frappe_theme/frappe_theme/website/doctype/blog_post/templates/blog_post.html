@@ -1,0 +1,48 @@
+{% extends "templates/web.html" %}
+{% block meta_block %}
+	{% include "templates/includes/meta_block.html" %}
+{% endblock %}
+
+{% from "templates/includes/media.html" import media %}
+
+{% block page_content %}
+<style>
+	.page-head {display: none;}
+</style>
+<section class='top-section'>
+	<h1>{{ title }}</h1>
+	<p class='lead'>{{ blog_intro }}</p>
+</section>
+<article class="blog-content" itemscope itemtype="http://schema.org/BlogPosting">
+    <!-- begin blog content -->
+    <div class="blog-info">
+	<p class="text-muted">
+	    {{ frappe.format_date(published_on) }}
+	</p>
+    </div>
+    <div itemprop="articleBody" class="longform blog-text mb-5">
+	{{ content }}
+    </div>
+    <!-- end blog content -->
+</article>
+{% if blogger_info %}
+{{ media(
+		blogger_info.full_name,
+		blogger_info.bio,
+		blogger_info.avatar or "/assets/frappe/images/default-avatar.png",
+	)
+}}
+{% endif %}
+<div class="border-top mt-4 pt-4 blog-comments">
+    {% include 'templates/includes/comments/comments.html' %}
+</div>
+
+<style>
+	.blog-text {
+		font-size: 18px;
+	}
+</style>
+<script>
+    frappe.ready(function() { frappe.set_search_path("/blog"); })
+</script>
+{% endblock %}

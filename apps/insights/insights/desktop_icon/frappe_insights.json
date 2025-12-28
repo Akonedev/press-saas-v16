@@ -1,0 +1,19 @@
+{
+ "app": "insights",
+ "creation": "2025-12-28 03:26:28.053801",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "App",
+ "idx": 0,
+ "label": "Frappe Insights",
+ "link": "/insights",
+ "link_type": "External",
+ "logo_url": "/assets/insights/frontend/insights-logo.png",
+ "modified": "2025-12-28 03:26:28.053801",
+ "modified_by": "Administrator",
+ "name": "Frappe Insights",
+ "owner": "Administrator",
+ "roles": [],
+ "standard": 1
+}

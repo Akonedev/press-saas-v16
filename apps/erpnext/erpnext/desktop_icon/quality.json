@@ -1,0 +1,20 @@
+{
+ "app": "erpnext",
+ "creation": "2025-11-17 20:55:11.828716",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon": "quality",
+ "icon_type": "Link",
+ "idx": 1,
+ "label": "Quality",
+ "link_to": "Quality",
+ "link_type": "Workspace",
+ "modified": "2025-12-22 13:07:13.506034",
+ "modified_by": "Administrator",
+ "name": "Quality",
+ "owner": "Administrator",
+ "parent_icon": "ERPNext",
+ "roles": [],
+ "standard": 1
+}

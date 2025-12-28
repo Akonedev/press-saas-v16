@@ -1,0 +1,23 @@
+{
+ "content": null,
+ "creation": "2025-06-04 16:04:34.908449",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2025-07-09 13:01:46.027879",
+ "modified_by": "Administrator",
+ "module": "Otto",
+ "name": "view-otto-session",
+ "owner": "Administrator",
+ "page_name": "view-otto-session",
+ "roles": [
+  {
+   "role": "System Manager"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "View Session"
+}

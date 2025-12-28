@@ -1,0 +1,19 @@
+{
+ "app": "helpdesk",
+ "creation": "2025-12-28 03:34:27.898403",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "App",
+ "idx": 0,
+ "label": "Helpdesk",
+ "link": "/helpdesk",
+ "link_type": "External",
+ "logo_url": "/assets/helpdesk/desk/favicon.svg",
+ "modified": "2025-12-28 03:34:27.898403",
+ "modified_by": "Administrator",
+ "name": "Helpdesk",
+ "owner": "Administrator",
+ "roles": [],
+ "standard": 1
+}

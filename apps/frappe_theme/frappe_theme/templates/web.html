@@ -1,0 +1,36 @@
+{% extends "frappe/templates/web.html" %}
+
+{% block page_container %}
+<main>
+	<div class="d-flex justify-content-between align-items-center">
+		<div class="page-header">
+			{% block header %}{% endblock %}
+		</div>
+
+		{% if self.header_actions() %}
+		<div class="page-header-actions-block">
+			{% block header_actions %}{% endblock %}
+		</div>
+		{% endif %}
+	</div>
+
+	<div class="page_content">
+		{%- block page_content -%}{%- endblock -%}
+	</div>
+
+	<div class="page-footer container">
+		{%- block page_footer -%}
+		<div class="page-next-prev-links">
+			{% if add_next_prev_links %}
+			{% include 'templates/includes/next-prev-links.html' %}
+			{% endif %}
+			{% if template and template.endswith('.md') and repo %}
+				<a class='text-muted improve-link' target='_blank'
+					href="https://github.com/{{ repo }}/blob/master/{{ repo.split('/')[1] }}/{{ template }}">
+					Improve this page</a>
+			{% endif %}
+		</div>
+		{%- endblock -%}
+	</div>
+</main>
+{% endblock %}

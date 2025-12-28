@@ -1,0 +1,47 @@
+[project]
+name = "otto"
+authors = [{ name = "Alan Tom", email = "alan@frappe.io" }]
+description = ""
+requires-python = ">=3.10"
+readme = "README.md"
+dynamic = ["version"]
+dependencies = [
+    # "frappe~=15.0.0" # Installed and managed by bench.
+    "litellm==1.75.6",
+]
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+# These dependencies are only installed when developer mode is enabled
+[tool.bench.dev-dependencies]
+# package_name = "~=1.1.0"
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I", "UP", "B", "RUF", "FA", "TC", "C90", "RET", "SIM"]
+ignore = [
+    "E101",   # indentation contains mixed spaces and tabs (triggered by spaces in docstrings)
+    "UP015",  # Unnecessary open mode parameters
+    "SIM108", # Use ternary operator {contents} instead of if-else-block
+    "F821",   # Undefined name, cause of DF.Literal
+    "F722",   # syntax error in forward type annotation, cause of DF.Literal
+    "E501",   # line too long, cause hooks.py
+    "W191",   # indentation contains tabs, cause when the world zigs, we zag
+    "B023",   # function doesn't bind loop variable - will have last iteration's value
+    "UP037",  # remove quotes from annotations, messes up DF.Literal typing
+    "SIM103", # return condition directly, readability suffers at times
+]
+typing-modules = ["frappe.types.DF"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "tab"
+docstring-code-format = true
+
+[tool.ruff.lint.mccabe] # Flag errors (`C901`) whenever the complexity level exceeds 5.
+max-complexity = 15

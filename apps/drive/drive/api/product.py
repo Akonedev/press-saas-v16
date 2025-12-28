@@ -1,0 +1,487 @@
+import frappe
+from frappe import _
+from frappe.rate_limiter import rate_limit
+from frappe.translate import get_all_translations
+from frappe.utils import escape_html, split_emails, validate_email_address
+
+from drive.api.permissions import get_teams, is_admin
+from drive.utils import default_team
+
+CORPORATE_DOMAINS = ["gmail.com", "icloud.com", "frappemail.com"]
+
+
+def access_app():
+    return True
+
+
+@frappe.whitelist()
+def get_domain_teams(domain):
+    if domain in CORPORATE_DOMAINS or not domain:
+        return False
+    return False
+
+
+@frappe.whitelist()
+def create_team(user, team_name=None, icon=None, s3_bucket=None, prefix=None, personal=0):
+    """
+    Used for creating teams (including the personal "team")
+    """
+    team_name = team_name if team_name else frappe.session.user
+    exists = frappe.db.exists("Drive Team", {"title": team_name, "owner": user})
+    if exists:
+        return exists
+
+    team = frappe.get_doc(
+        {
+            "doctype": "Drive Team",
+            "title": team_name,
+            "icon": icon,
+            "s3_bucket": s3_bucket,
+            "prefix": prefix,
+            "personal": personal,
+        }
+    ).insert()
+    # Insert Drive settings if not already there
+    if not frappe.db.exists("Drive Settings", {"user": frappe.session.user}):
+        frappe.get_doc({"doctype": "Drive Settings", "user": frappe.session.user}).insert()
+
+    team.save()
+    return team.name
+
+
+@frappe.whitelist()
+def edit_team(team, icon=None, team_name=None):
+    team = frappe.get_doc("Drive Team", team)
+    if team_name:
+        team.title = team_name
+    if icon is not None:
+        team.icon = icon
+    team.save()
+    return team.name
+
+
+@frappe.whitelist()
+def leave_team(team):
+    drive_team = {k.user: k for k in frappe.get_doc("Drive Team", team).users}
+    if frappe.session.user not in drive_team:
+        frappe.throw("User doesn't belong to team")
+
+    frappe.delete_doc("Drive Team Member", drive_team[frappe.session.user].name)
+
+
+@frappe.whitelist()
+def request_invite(team, email=None):
+    invite = frappe.new_doc("Drive User Invitation")
+    invite.email = email or frappe.session.user
+    invite.team = team
+    invite.status = "Proposed"
+    invite.insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
+@frappe.whitelist()
+def get_invites():
+    invites = frappe.db.get_list(
+        "Drive User Invitation",
+        fields=["creation", "status", "team", "name"],
+        filters={"email": frappe.session.user, "status": ("in", ("Proposed", "Pending"))},
+    )
+    for i in invites:
+        i["team_name"] = frappe.db.get_value("Drive Team", i["team"], "title")
+    return invites
+
+
+@frappe.whitelist()
+def get_team_invites(team):
+    invites = frappe.db.get_list(
+        "Drive User Invitation",
+        fields=["creation", "status", "email", "name", "owner"],
+        filters={"team": team, "status": ("in", ("Proposed", "Pending"))},
+    )
+    for i in invites:
+        i["user_name"] = frappe.db.get_value("User", i["email"], "full_name")
+    return invites
+
+
+@frappe.whitelist(allow_guest=True)
+def signup(account_request, first_name, last_name=None, team=None):
+    account_request = frappe.get_doc("Account Request", account_request)
+    if not account_request.invite and frappe.get_website_settings("disable_signup"):
+        frappe.throw("Signing up is disabled on this site.", frappe.PermissionError)
+
+    if not account_request.login_count:
+        frappe.throw("Please verify the email first.")
+
+    user = create_user(account_request.email, first_name, last_name, True)
+    account_request.signed_up = 1
+    account_request.save(ignore_permissions=True)
+
+    team = None
+    if account_request.invite:
+        invite = frappe.get_doc("Drive User Invitation", account_request.invite)
+        invite.status = "Accepted"
+        invite.save(ignore_permissions=True)
+        if invite.team:
+            # Add to that team
+            team = frappe.get_doc("Drive Team", invite.team)
+            team.append("users", {"user": user.email, "access_level": 0 if invite.as_guest else 1})
+            team.save(ignore_permissions=True)
+            team = invite.team
+    return {"location": f"/drive/t/{team}" if team else "/drive/"}
+
+
+def create_user(email, first_name, last_name=None, login=False):
+    user = frappe.get_doc(
+        {
+            "doctype": "User",
+            "email": email,
+            "first_name": escape_html(first_name),
+            "last_name": escape_html(last_name),
+            "enabled": 1,
+            "user_type": "Website User",
+        }
+    )
+
+    user.flags.no_welcome_mail = True
+    user.flags.ignore_password_policy = True
+    try:
+        user.insert(ignore_permissions=True)
+    except frappe.DuplicateEntryError:
+        frappe.throw("User already exists")
+    if login:
+        frappe.local.login_manager.login_as(user.email)
+    doc = frappe.get_doc(
+        {
+            "doctype": "Drive Settings",
+            "user": email,
+        }
+    )
+    doc.insert()
+    return user
+
+
+@frappe.whitelist(allow_guest=True)
+def oauth_providers():
+    from frappe.utils.html_utils import get_icon_html
+    from frappe.utils.oauth import get_oauth2_authorize_url, get_oauth_keys
+    from frappe.utils.password import get_decrypted_password
+
+    out = []
+    providers = frappe.get_all(
+        "Social Login Key",
+        filters={"enable_social_login": 1},
+        fields=["name", "client_id", "base_url", "provider_name", "icon"],
+        order_by="name",
+    )
+
+    for provider in providers:
+        client_secret = get_decrypted_password("Social Login Key", provider.name, "client_secret")
+        if not client_secret:
+            continue
+
+        icon = None
+        if provider.icon:
+            if provider.provider_name == "Custom":
+                icon = get_icon_html(provider.icon, small=True)
+            else:
+                icon = f"<img src='{provider.icon}' alt={provider.provider_name}>"
+
+        if provider.client_id and provider.base_url and get_oauth_keys(provider.name):
+            out.append(
+                {
+                    "name": provider.name,
+                    "provider_name": provider.provider_name,
+                    "auth_url": get_oauth2_authorize_url(provider.name, "/drive"),
+                    "icon": icon,
+                }
+            )
+    return out
+
+
+@frappe.whitelist(allow_guest=True)
+@rate_limit(limit=5, seconds=60)
+def send_otp(email, login):
+    disable_signups = signup_disabled()
+    if not login and disable_signups:
+        frappe.throw("Signing up is disabled on this site.", frappe.PermissionError)
+
+    is_login = frappe.db.exists(
+        "Account Request",
+        {
+            "email": email,
+            "signed_up": 1,
+        },
+    )
+    if not is_login:
+        signed_up = 0
+        if login:
+            if not frappe.db.exists("User", email):
+                frappe.throw("This email account is not found. " if disable_signups else "Please sign up first.")
+            signed_up = 1
+
+        account_request = frappe.get_doc(
+            {
+                "doctype": "Account Request",
+                "email": email,
+                "signed_up": signed_up,
+            }
+        ).insert(ignore_permissions=True)
+        account_request.set_otp()
+        try:
+            account_request.send_otp()
+        except:
+            frappe.throw("Please setup an email account in Desk.")
+        return account_request.name
+    else:
+        req = frappe.get_doc("Account Request", is_login, ignore_permissions=True)
+        req.set_otp()
+        try:
+            req.send_otp()
+        except:
+            pass
+            # frappe.throw("Please setup an email account in Desk.")
+        return is_login
+
+
+@frappe.whitelist(allow_guest=True)
+@rate_limit(limit=5, seconds=60)
+def verify_otp(account_request, otp):
+    req = frappe.get_doc("Account Request", account_request)
+    if req.otp != otp:
+        frappe.throw("Invalid OTP")
+    req.login_count += 1
+    req.save(ignore_permissions=True)
+    if req.signed_up:
+        frappe.local.login_manager.login_as(req.email)
+
+
+@frappe.whitelist(allow_guest=True)
+def get_settings():
+    if frappe.session.user == "Guest":
+        return {}
+    try:
+        return frappe.get_cached_doc("Drive Settings", frappe.session.user)
+    except:
+        return {}
+
+
+@frappe.whitelist()
+def set_settings(updates):
+    try:
+        settings = frappe.get_doc("Drive Settings", frappe.session.user)
+    except:
+        settings = frappe.get_doc({"doctype": "Drive Settings", "user": frappe.session.user})
+        settings.insert()
+
+    if "single_click" in updates:
+        settings.single_click = int(updates["single_click"])
+    if "auto_detect_links" in updates:
+        settings.auto_detect_links = int(updates["auto_detect_links"])
+    if "default_team" in updates:
+        settings.default_team = updates["default_team"]
+    settings.save()
+
+
+@frappe.whitelist()
+def invite_users(emails, team=None, as_guest=False, auto=False):
+    if not emails:
+        return
+
+    email_string = validate_email_address(emails, throw=False)
+    email_list = split_emails(email_string)
+    if not email_list:
+        return
+
+    existing_invites = frappe.db.get_list(
+        "Drive User Invitation",
+        filters={"email": ["in", email_list], "team": team, "status": "Pending"},
+        pluck="email",
+    )
+
+    new_invites = list(set(email_list) - set(existing_invites))
+    for email in new_invites:
+        invite = frappe.new_doc("Drive User Invitation")
+        invite.email = email
+        invite.team = team
+        invite.status = "Automatic" if auto else "Pending"
+        invite.as_guest = as_guest
+        invite.insert()
+
+
+@frappe.whitelist()
+def set_user_access(team, user_id, access_level):
+    if not is_admin(team):
+        frappe.throw("You don't have the permissions for this action.")
+    drive_team = {k.user: k for k in frappe.get_doc("Drive Team", team).users}
+    drive_team[user_id].access_level = access_level
+    drive_team[user_id].save()
+
+
+@frappe.whitelist()
+def remove_user(team, user_id):
+    drive_team = {k.user: k for k in frappe.get_doc("Drive Team", team).users}
+    if frappe.session.user not in drive_team:
+        frappe.throw("User doesn't belong to team")
+    frappe.delete_doc("Drive Team Member", drive_team[user_id].name)
+
+
+# SECURITY: send user data with files
+@frappe.whitelist(allow_guest=True)
+@default_team
+def get_all_users(team):
+    teams = [team] if team != "all" else get_teams()
+
+    team_users = {}
+    for team in teams:
+        team_users |= {k.user: k.access_level for k in frappe.get_doc("Drive Team", team).users}
+    users = frappe.get_all(
+        doctype="User",
+        filters=[
+            ["name", "in", list(team_users.keys())],
+        ],
+        fields=[
+            "name",
+            "email",
+            "full_name",
+            "user_image",
+        ],
+    )
+    for u in users:
+        u["access_level"] = team_users[u["name"]]
+    return users
+
+
+@frappe.whitelist()
+def get_drive_users():
+    users = frappe.get_all(
+        doctype="User",
+        filters=[
+            ["user_type", "=", "Website User"],
+            ["enabled", "=", 1],
+        ],
+        fields=[
+            "name",
+            "email",
+            "full_name",
+            "user_image",
+        ],
+    )
+    return users
+
+
+@frappe.whitelist(allow_guest=True)
+def accept_invite(key, redirect=True):
+    try:
+        invitation = frappe.get_doc("Drive User Invitation", key)
+    except:
+        frappe.throw("Could not find invitation.")
+
+    return invitation.accept(redirect)
+
+
+@frappe.whitelist()
+def reject_invite(key):
+    try:
+        invitation = frappe.get_doc("Drive User Invitation", key)
+    except:
+        frappe.throw("Could not find invitation.")
+
+    invitation.status = "Expired"
+    invitation.save(ignore_permissions=True)
+
+
+@frappe.whitelist(allow_guest=True)
+def get_translations():
+    if frappe.session.user != "Guest":
+        language = frappe.db.get_value("User", frappe.session.user, "language")
+        if not language:
+            language = frappe.db.get_single_value("System Settings", "language")
+    else:
+        language = frappe.db.get_single_value("System Settings", "language")
+
+    return get_all_translations(language)
+
+
+@frappe.whitelist()
+def check_is_admin():
+    return {"is_admin": "Drive Admin" in frappe.get_roles()}
+
+
+@frappe.whitelist()
+def disk_settings(**kwargs):
+    settings = frappe.get_single("Drive Disk Settings")
+    if not check_is_admin()["is_admin"]:
+        # Return only safe values
+        return {"preview_size": settings.preview_size, "enabled": settings.enabled}
+
+    if frappe.request.method == "GET":
+        return settings
+
+    field_map = {
+        "team_prefix": "team_id",
+        "root_folder": None,
+        "aws_key": None,
+        "aws_secret": None,
+        "bucket": None,
+        "endpoint_url": None,
+        "signature_version": "s3v4",
+    }
+    settings.enabled = 1
+    for field, value in kwargs.items():
+        if field in field_map and value:
+            setattr(settings, field, value)
+        elif field == "backend_type":
+            # If backend is s3, enable it. Otherwise, disable.
+            settings.enabled = 1 if value == "s3" else 0
+    settings.save()
+
+
+WHITELISTED_DOMAINS = [
+    "https://gameplan.frappe.cloud",
+    "https://frappecloud.com",
+    "https://frappe.io",
+    "https://cloud.frappe.io",
+]
+
+
+def after_request(request):
+    try:
+        if request.path.startswith("/drive/") or request.path.startswith("/api/method/"):
+            frappe.local.response_headers["Content-Security-Policy"] = (
+                f"frame-ancestors {' '.join(WHITELISTED_DOMAINS)} 'self'"
+            )
+            if "X-Frame-Options" in frappe.local.response_headers:
+                del frappe.local.response_headers["X-Frame-Options"]
+    except:
+        pass
+
+
+@frappe.whitelist()
+def get_updates(client):
+    client = frappe.get_doc("Drive Desktop Client", client)
+    if client.user != frappe.session.user:
+        frappe.throw("You cannot access this desktop client", frappe.PermissionError)
+
+    updates = [u.as_dict() for u in client.updates]
+    for u in updates:
+        if u["type"] in ["rename", "move"]:
+            u["details"] = frappe.db.get_value("Drive File", u["entity"], "path")
+        if u["type"] == "upload":
+            is_group = frappe.db.get_value("Drive File", u["entity"], "is_group")
+            if is_group:
+                u["details"] = "folder"
+            else:
+                u["details"] = ("file", *frappe.db.get_value("Drive File", u["entity"], ["parent_entity", "title"]))
+    return updates
+    # return {"team": client.team, "updates": client.updates}
+
+
+@frappe.whitelist()
+def pop_update(name):
+    # Security: check before deletion
+    frappe.get_doc("Drive File Update", name).delete()
+
+
+@frappe.whitelist(allow_guest=True)
+def signup_disabled():
+    return frappe.get_website_settings("disable_signup")

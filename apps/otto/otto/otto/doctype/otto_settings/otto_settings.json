@@ -1,0 +1,107 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-04-29 22:03:18.215797",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "is_enabled",
+  "hard_stops_section",
+  "task_execution_timeout",
+  "column_break_dbcw",
+  "max_llm_calls",
+  "api_keys_section",
+  "anthropic_api_key",
+  "openai_api_key",
+  "gemini_api_key",
+  "env_section",
+  "global_env"
+ ],
+ "fields": [
+  {
+   "fieldname": "api_keys_section",
+   "fieldtype": "Section Break",
+   "label": "API Keys"
+  },
+  {
+   "fieldname": "anthropic_api_key",
+   "fieldtype": "Password",
+   "label": "Anthropic API Key"
+  },
+  {
+   "fieldname": "openai_api_key",
+   "fieldtype": "Password",
+   "label": "OpenAI API Key"
+  },
+  {
+   "default": "0",
+   "description": "Master switch that enables Otto, if unchecked all automated task handling will be disabled.\n<br>\nDoes not prevent manual session.",
+   "fieldname": "is_enabled",
+   "fieldtype": "Check",
+   "label": "Is Enabled"
+  },
+  {
+   "fieldname": "env_section",
+   "fieldtype": "Section Break",
+   "label": "Env"
+  },
+  {
+   "description": "JSON object used to pass env values to tools.\n<br><br>\nFor example the value of <code>message</code> below: <pre><code>    { \"message\": \"Hello, World\" }</code></pre> can be accessed in a tool like so:\n<pre><code>    def main():\n        print(otto.env.message)\n</code></pre>\n",
+   "fieldname": "global_env",
+   "fieldtype": "JSON",
+   "label": "Global Env"
+  },
+  {
+   "fieldname": "gemini_api_key",
+   "fieldtype": "Password",
+   "label": "Gemini API Key (Google)"
+  },
+  {
+   "default": "30",
+   "description": "Timeout duration in <b>minutes</b>. Beyond this task execution will be force stopped.",
+   "fieldname": "task_execution_timeout",
+   "fieldtype": "Int",
+   "label": "Task Execution Timeout"
+  },
+  {
+   "fieldname": "hard_stops_section",
+   "fieldtype": "Section Break",
+   "label": "Hard Stops"
+  },
+  {
+   "fieldname": "column_break_dbcw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "20",
+   "description": "Max number of LLM calls allowed in a task's execution before stopping. If set to zero then no limit is placed.\n<br>\nThis is required because as context grows long, an LLM can get stuck in a loop without terminating the task.",
+   "fieldname": "max_llm_calls",
+   "fieldtype": "Int",
+   "label": "Max LLM Calls (in Execution)"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-07-11 11:53:06.810090",
+ "modified_by": "Administrator",
+ "module": "Otto",
+ "name": "Otto Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,19 @@
+{
+ "app": "drive",
+ "creation": "2025-12-28 03:36:37.330715",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "App",
+ "idx": 0,
+ "label": "Frappe Drive",
+ "link": "/drive",
+ "link_type": "External",
+ "logo_url": "/assets/drive/frontend/favicon-310x310.png",
+ "modified": "2025-12-28 03:36:37.330715",
+ "modified_by": "Administrator",
+ "name": "Frappe Drive",
+ "owner": "Administrator",
+ "roles": [],
+ "standard": 1
+}

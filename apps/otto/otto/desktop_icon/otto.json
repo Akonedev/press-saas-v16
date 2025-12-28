@@ -1,0 +1,19 @@
+{
+ "app": "otto",
+ "creation": "2025-12-28 03:46:50.639659",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "App",
+ "idx": 0,
+ "label": "Otto",
+ "link": "/app/otto",
+ "link_type": "External",
+ "logo_url": "/assets/otto/desk/otto-logo.svg",
+ "modified": "2025-12-28 03:46:50.639659",
+ "modified_by": "Administrator",
+ "name": "Otto",
+ "owner": "Administrator",
+ "roles": [],
+ "standard": 1
+}

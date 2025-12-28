@@ -1,0 +1,168 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "hash",
+ "creation": "2025-04-30 12:59:09.968373",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "requires_permission",
+  "column_break_byai",
+  "slug",
+  "mock_tool",
+  "mock_return_value",
+  "definition_section",
+  "code",
+  "section_break_lafy",
+  "description",
+  "args",
+  "validation_section",
+  "is_valid",
+  "column_break_kizv",
+  "reason"
+ ],
+ "fields": [
+  {
+   "default": "def main(name: str):\n    return f\"Hello {name}\"",
+   "description": "Tool definition consists of a function <code>main</code>. Return value of this\n<code>main</code> function is passed to the LLM.\n\n<br><br>\n<b>Tool definition guidelines</b>\n<ul>\n    <li>Tool definition should have a valid Python function named <code>main</code>.</li>\n    <li>Use <code>from module import item</code> instead of <code>import module</code>.</li>\n    <li>Not all imports are allowed, test the function to find out if the import works.</li>\n    <li>Use simple type annotations to infer JSON schema type for the arguments.</li>\n    <li>Complex types like <code>str | int</code> cannot be inferred from.</li>\n</ul>",
+   "fieldname": "code",
+   "fieldtype": "Code",
+   "in_list_view": 1,
+   "label": "Code",
+   "options": "Python",
+   "reqd": 1
+  },
+  {
+   "fieldname": "definition_section",
+   "fieldtype": "Section Break",
+   "label": "Definition"
+  },
+  {
+   "description": "Used to generate tool schema. This is required by the LLM to understand the tool.",
+   "fieldname": "section_break_lafy",
+   "fieldtype": "Section Break",
+   "label": "Description"
+  },
+  {
+   "description": "Tool description should consist the following information:\n\n<ul>\n    <li>What function does tool perform</li>\n    <li>How to interpret the return value if if required</li>\n</ul>",
+   "fieldname": "description",
+   "fieldtype": "Long Text",
+   "label": "Description"
+  },
+  {
+   "description": "Arg descriptions should tell then LLM what the argument is for. If needed it should also describe its structure (if a nested data type is used).\n<br><br>\nIf the <code>main</code> function in <b>Code</b> is has type annotations, this list can be auto generated. If the type annotations are complex, the type will be set as <code>unknown</code> this should be overridden with a valid JSON type. Ref: <a href=\"https://json-schema.org/understanding-json-schema/reference/type\">JSON Schema Types</a>",
+   "fieldname": "args",
+   "fieldtype": "Table",
+   "label": "Args",
+   "options": "Otto Tool Arg CT"
+  },
+  {
+   "description": "Snake cased name of the tool. This is the name that the LLM sees.",
+   "fieldname": "slug",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Slug",
+   "reqd": 1
+  },
+  {
+   "fieldname": "validation_section",
+   "fieldtype": "Section Break",
+   "label": "Validation"
+  },
+  {
+   "default": "0",
+   "description": "If tool is invalid and is included in a task, task session will fail.",
+   "fieldname": "is_valid",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Is Valid"
+  },
+  {
+   "fieldname": "column_break_kizv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.reason || !doc.is_valid",
+   "description": "Reason for why tool is invalid.",
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason"
+  },
+  {
+   "default": "0",
+   "description": "If enabled, the args provided by the LLM are logged in <b>Otto Scrapbook</b>. The <code>main</code> function is not actually called.",
+   "fieldname": "mock_tool",
+   "fieldtype": "Check",
+   "label": "Mock Tool"
+  },
+  {
+   "depends_on": "eval:doc.mock_tool",
+   "description": "Return value to give the LLM when the tool is mocked. Should be a JSON loadable string.",
+   "fieldname": "mock_return_value",
+   "fieldtype": "Data",
+   "label": "Mock Return Value"
+  },
+  {
+   "fieldname": "column_break_byai",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Tool requires permission to execute.\n\nIf checked an Otto Permission entry will be created during task execution when this tool is called by the LLM.",
+   "fieldname": "requires_permission",
+   "fieldtype": "Check",
+   "label": "Requires Permission"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [
+  {
+   "link_doctype": "Otto Scrapbook",
+   "link_fieldname": "tool"
+  }
+ ],
+ "modified": "2025-10-06 17:37:55.920302",
+ "modified_by": "Administrator",
+ "module": "Otto",
+ "name": "Otto Tool",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Otto Permission Granter",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "show_title_field_in_link": 1,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}

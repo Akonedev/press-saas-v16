@@ -1,0 +1,19 @@
+{
+ "app": "slides",
+ "creation": "2025-12-28 03:46:43.146624",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "App",
+ "idx": 0,
+ "label": "Slides",
+ "link": "/slides",
+ "link_type": "External",
+ "logo_url": "/assets/slides/frontend/slides-logo.svg",
+ "modified": "2025-12-28 03:46:43.146624",
+ "modified_by": "Administrator",
+ "name": "Slides",
+ "owner": "Administrator",
+ "roles": [],
+ "standard": 1
+}
