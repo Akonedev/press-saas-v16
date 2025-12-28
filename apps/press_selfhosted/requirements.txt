@@ -1,0 +1,29 @@
+# =============================================================================
+# Requirements for Press Self-Hosted
+# =============================================================================
+
+# MinIO/S3 client
+minio>=7.2.0
+
+# Docker client for container operations
+docker>=7.0.0
+
+# YAML parsing for configuration
+PyYAML>=6.0
+
+# HTTP client for API calls
+requests>=2.31.0
+
+# Environment variable management
+python-dotenv>=1.0.0
+
+# Validation
+pydantic>=2.5.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-asyncio>=0.21.0
+
+# Type hints
+typing-extensions>=4.8.0

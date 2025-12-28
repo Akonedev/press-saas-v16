@@ -1,0 +1,98 @@
+# =============================================================================
+# Traefik Dynamic Configuration - Default Rules
+# =============================================================================
+# This file contains default routing rules and middlewares
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# HTTP Routers
+# -----------------------------------------------------------------------------
+http:
+  routers:
+    # Default catch-all router
+    default:
+      entryPoints:
+        - web
+        - websecure
+      rule: "HostRegexp(`{host:.+}`)"
+      service: press-backend
+      priority: 1
+      middlewares:
+        - security-headers
+        - rate-limit
+
+  # ---------------------------------------------------------------------------
+  # Services
+  # ---------------------------------------------------------------------------
+  services:
+    # Press backend service
+    press-backend:
+      loadBalancer:
+        servers:
+          - url: "http://erp-saas-cloud-c16-press:8000"
+        healthCheck:
+          path: "/api/method/ping"
+          interval: "30s"
+          timeout: "5s"
+
+  # ---------------------------------------------------------------------------
+  # Middlewares
+  # ---------------------------------------------------------------------------
+  middlewares:
+    # Security headers
+    security-headers:
+      headers:
+        frameDeny: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        customResponseHeaders:
+          X-Powered-By: ""
+          Server: ""
+
+    # Rate limiting
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 200
+        period: 1m
+
+    # CORS headers (if needed)
+    cors-headers:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        accessControlAllowOriginList:
+          - "*"
+        accessControlMaxAge: 100
+        addVaryHeader: true
+
+    # Compress responses
+    compress:
+      compress: {}
+
+    # Strip /api prefix (if needed)
+    strip-api-prefix:
+      stripPrefix:
+        prefixes:
+          - "/api"
+
+# -----------------------------------------------------------------------------
+# TLS Configuration
+# -----------------------------------------------------------------------------
+tls:
+  # TLS options for different security levels
+  options:
+    # Default TLS settings
+    default:
+      minVersion: VersionTLS12
+      sniStrict: false
+
+    # Strict TLS settings
+    strict:
+      minVersion: VersionTLS13
+      sniStrict: true

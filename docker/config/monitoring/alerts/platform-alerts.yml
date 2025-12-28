@@ -1,0 +1,167 @@
+# =============================================================================
+# Prometheus Alert Rules - ERP SaaS Cloud PRESSE v16
+# =============================================================================
+# Alert rules for platform monitoring and observability
+# =============================================================================
+
+groups:
+  # ---------------------------------------------------------------------------
+  # Host Resource Alerts
+  # ---------------------------------------------------------------------------
+  - name: host_resources
+    interval: 30s
+    rules:
+      # High CPU usage
+      - alert: HostHighCPU
+        expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: host
+        annotations:
+          summary: "Host CPU usage is high"
+          description: "Host CPU usage is above 80% (current: {{ $value }}%)"
+
+      # Critical CPU usage
+      - alert: HostCriticalCPU
+        expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 2m
+        labels:
+          severity: critical
+          component: host
+        annotations:
+          summary: "Host CPU usage is critical"
+          description: "Host CPU usage is above 95% (current: {{ $value }}%)"
+
+      # High memory usage
+      - alert: HostHighMemory
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          component: host
+        annotations:
+          summary: "Host memory usage is high"
+          description: "Host memory usage is above 85% (current: {{ $value }}%)"
+
+      # Critical memory usage
+      - alert: HostCriticalMemory
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          component: host
+        annotations:
+          summary: "Host memory usage is critical"
+          description: "Host memory usage is above 95% (current: {{ $value }}%)"
+
+      # High disk usage
+      - alert: HostHighDisk
+        expr: 100 - ((node_filesystem_avail_bytes{mountpoint="/",fstype!="rootfs"} / node_filesystem_size_bytes{mountpoint="/",fstype!="rootfs"}) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+          component: host
+        annotations:
+          summary: "Host disk usage is high"
+          description: "Host disk usage is above 85% (current: {{ $value }}%)"
+
+      # Critical disk usage
+      - alert: HostCriticalDisk
+        expr: 100 - ((node_filesystem_avail_bytes{mountpoint="/",fstype!="rootfs"} / node_filesystem_size_bytes{mountpoint="/",fstype!="rootfs"}) * 100) > 95
+        for: 2m
+        labels:
+          severity: critical
+          component: host
+        annotations:
+          summary: "Host disk usage is critical"
+          description: "Host disk usage is above 95% (current: {{ $value }}%)"
+
+  # ---------------------------------------------------------------------------
+  # Container Resource Alerts
+  # ---------------------------------------------------------------------------
+  - name: container_resources
+    interval: 30s
+    rules:
+      # High container memory
+      - alert: ContainerHighMemory
+        expr: container_memory_usage_bytes{container_label_com_press_selfhosted_service=~".+"} / 1024 / 1024 / 1024 > 2
+        for: 5m
+        labels:
+          severity: warning
+          component: container
+        annotations:
+          summary: "Container {{ $labels.container_label_com_press_selfhosted_service }} memory usage is high"
+          description: "Container memory usage is above 2GB (current: {{ $value }}GB)"
+
+      # Container restart
+      - alert: ContainerRestarted
+        expr: increase(container_start_time_seconds{container_label_com_press_selfhosted_service=~".+"}[5m]) > 0
+        labels:
+          severity: info
+          component: container
+        annotations:
+          summary: "Container {{ $labels.container_label_com_press_selfhosted_service }} restarted"
+          description: "Container has restarted in the last 5 minutes"
+
+  # ---------------------------------------------------------------------------
+  # Service Availability Alerts
+  # ---------------------------------------------------------------------------
+  - name: service_availability
+    interval: 30s
+    rules:
+      # Service down
+      - alert: ServiceDown
+        expr: up{job=~".*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: service
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "Service has been down for more than 2 minutes"
+
+      # Prometheus down
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: monitoring
+        annotations:
+          summary: "Prometheus is down"
+          description: "Prometheus monitoring service is not responding"
+
+  # ---------------------------------------------------------------------------
+  # Database Alerts (if exporter available)
+  # ---------------------------------------------------------------------------
+  - name: database_alerts
+    interval: 30s
+    rules:
+      # Too many connections (example)
+      # - alert: DatabaseHighConnections
+      #   expr: mysql_global_status_threads_connected / mysql_global_variables_max_connections * 100 > 80
+      #   for: 5m
+      #   labels:
+      #     severity: warning
+      #     component: database
+      #   annotations:
+      #     summary: "MariaDB connection usage is high"
+      #     description: "Connection usage is above 80% (current: {{ $value }}%)"
+
+  # ---------------------------------------------------------------------------
+  # Network Alerts
+  # ---------------------------------------------------------------------------
+  - name: network_alerts
+    interval: 30s
+    rules:
+      # High network errors
+      - alert: HighNetworkErrors
+        expr: rate(node_network_receive_errs_total[5m]) + rate(node_network_transmit_errs_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: network
+        annotations:
+          summary: "High network error rate on {{ $labels.device }}"
+          description: "Network errors above 10/s (current: {{ $value }}/s)"

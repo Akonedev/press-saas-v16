@@ -1,0 +1,141 @@
+# =============================================================================
+# Wazuh Security Monitoring - ERP SaaS Cloud PRESSE v16
+# =============================================================================
+# Wazuh provides security monitoring, intrusion detection, and log analysis
+# Constitution Constraint: Container prefix erp-saas-cloud-c16-*
+# Constitution Constraint: Port 32394
+# =============================================================================
+
+# Note: Wazuh is a complex stack. This is a simplified single-node deployment.
+# For production, consider using the full Wazuh multi-container stack.
+
+services:
+  # ---------------------------------------------------------------------------
+  # Wazuh Manager + Dashboard (All-in-One)
+  # ---------------------------------------------------------------------------
+  wazuh:
+    image: wazuh/wazuh-manager:latest
+    container_name: erp-saas-cloud-c16-wazuh
+    hostname: erp-saas-cloud-c16-wazuh
+    restart: unless-stopped
+
+    # Port Mapping (Constitution: 32300-32500)
+    ports:
+      # Wazuh API
+      - "${WAZUH_API_PORT:-32394}:55000"
+      # Agent registration
+      - "${WAZUH_REGISTRATION_PORT:-32395}:1514"
+      # Agent communication
+      - "${WAZUH_AGENT_PORT:-32396}:1515"
+
+    # Volumes
+    volumes:
+      # Configuration
+      - wazuh-config:/var/ossec/etc
+
+      # Data persistence
+      - wazuh-data:/var/ossec/data
+
+      # Logs
+      - wazuh-logs:/var/ossec/logs
+
+      # Docker socket for monitoring (read-only)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    # Environment
+    environment:
+      # Wazuh configuration
+      WAZUH_MANAGER_HOSTNAME: "erp-saas-cloud-c16-wazuh"
+
+      # Indexer configuration (single-node mode)
+      INDEXER_URL: "https://erp-saas-cloud-c16-wazuh:9200"
+      INDEXER_USERNAME: "admin"
+      INDEXER_PASSWORD: "${WAZUH_INDEXER_PASSWORD:-SecurePassword123!}"
+
+      # API credentials
+      API_USERNAME: "wazuh"
+      API_PASSWORD: "${WAZUH_API_PASSWORD:-SecurePassword123!}"
+
+      # Dashboard URL
+      DASHBOARD_URL: "https://erp-saas-cloud-c16-wazuh:443"
+
+      # Timezone
+      TZ: "UTC"
+
+    # Health Check
+    healthcheck:
+      test: ["CMD-SHELL", "/var/ossec/bin/wazuh-control status || exit 1"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 120s
+
+    # Network
+    networks:
+      - erp-saas-cloud-c16-network
+
+    # Labels
+    labels:
+      com.press.selfhosted.service: "wazuh"
+      com.press.selfhosted.description: "Security monitoring and intrusion detection"
+
+    # NOTE: Wazuh requires significant resources
+    # Minimum: 2 CPU cores, 4GB RAM
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  wazuh-config:
+    name: erp-saas-cloud-c16-wazuh-config
+    driver: local
+
+  wazuh-data:
+    name: erp-saas-cloud-c16-wazuh-data
+    driver: local
+
+  wazuh-logs:
+    name: erp-saas-cloud-c16-wazuh-logs
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  erp-saas-cloud-c16-network:
+    external: true
+    name: erp-saas-cloud-c16-network
+
+# =============================================================================
+# Notes
+# =============================================================================
+# This is a simplified Wazuh deployment for demonstration purposes.
+# For production use, consider:
+#
+# 1. Full Wazuh Stack:
+#    - Wazuh Manager
+#    - Wazuh Indexer (Opensearch)
+#    - Wazuh Dashboard
+#
+# 2. Security:
+#    - Change default passwords
+#    - Configure SSL/TLS certificates
+#    - Implement firewall rules
+#
+# 3. Agents:
+#    - Install Wazuh agents on hosts to monitor
+#    - Configure agent communication
+#    - Set up log collection
+#
+# 4. Integration:
+#    - Integrate with Prometheus for metrics
+#    - Send alerts to notification channels
+#    - Connect to SIEM platforms
+#
+# For full deployment, see: https://documentation.wazuh.com/current/deployment-options/docker/index.html

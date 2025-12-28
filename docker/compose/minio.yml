@@ -1,0 +1,79 @@
+# =============================================================================
+# MinIO S3-Compatible Storage - ERP SaaS Cloud PRESSE v16
+# =============================================================================
+# MinIO provides S3-compatible object storage for files and backups
+# Constitution Constraint: Container prefix erp-saas-cloud-c16-*
+# Constitution Constraint: Port 32390 (API) and 32391 (Console)
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # MinIO Object Storage
+  # ---------------------------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: erp-saas-cloud-c16-minio
+    hostname: erp-saas-cloud-c16-minio
+    restart: unless-stopped
+
+    # Environment Configuration
+    environment:
+      # Access Credentials
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+
+      # Server Configuration
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:32391
+
+      # Region Configuration (optional)
+      MINIO_REGION: ${MINIO_REGION:-us-east-1}
+
+    # Command: Start MinIO server
+    command: server /data --console-address ":9001"
+
+    # Port Mapping (Constitution: 32300-32500)
+    ports:
+      - "${MINIO_API_PORT:-32390}:9000"      # S3 API
+      - "${MINIO_CONSOLE_PORT:-32391}:9001"  # Web Console
+
+    # Volumes
+    volumes:
+      # Persistent storage for objects
+      - erp-saas-cloud-c16-minio-data:/data
+
+      # MinIO policies
+      - ../config/minio/policies:/policies:ro
+
+    # Health Check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # Network
+    networks:
+      - erp-saas-cloud-c16-network
+
+    # Labels
+    labels:
+      com.press.selfhosted.service: "minio"
+      com.press.selfhosted.description: "S3-compatible object storage"
+
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  erp-saas-cloud-c16-network:
+    external: true
+    name: erp-saas-cloud-c16-network
+
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  erp-saas-cloud-c16-minio-data:
+    name: erp-saas-cloud-c16-minio-data

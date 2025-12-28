@@ -1,0 +1,80 @@
+# =============================================================================
+# Development Override - ERP SaaS Cloud PRESSE v16
+# =============================================================================
+# Development-specific overrides for local development
+# This file is automatically loaded by Docker Compose
+# Constitution Constraint: Container prefix erp-saas-cloud-c16-*
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Press Development Mode
+  # ---------------------------------------------------------------------------
+  press:
+    environment:
+      # Enable Frappe developer mode
+      DEVELOPER_MODE: "1"
+      # Disable production optimizations
+      FRAPPE_PRODUCTION: "0"
+      # Enable hot reload
+      AUTO_RELOAD: "1"
+      # Verbose logging
+      LOG_LEVEL: DEBUG
+
+    # Mount source code for live editing
+    volumes:
+      # Mount apps directory for development
+      - ../../apps:/home/frappe/frappe-bench/apps:cached
+      # Mount custom configurations
+      - ../config:/home/frappe/frappe-bench/config:ro
+
+    # Override command for development
+    command: >
+      bash -c "
+        bench set-config developer_mode 1 &&
+        bench serve --port 8000
+      "
+
+  # ---------------------------------------------------------------------------
+  # MariaDB Development Settings
+  # ---------------------------------------------------------------------------
+  mariadb:
+    environment:
+      # More verbose logging in development
+      MARIADB_LOG_LEVEL: DEBUG
+
+    # Expose port for direct database access in development
+    ports:
+      - "${MARIADB_DEV_PORT:-32306}:3306"
+
+  # ---------------------------------------------------------------------------
+  # Redis Development Settings
+  # ---------------------------------------------------------------------------
+  redis-cache:
+    # Expose for debugging with redis-cli
+    ports:
+      - "${REDIS_CACHE_DEV_PORT:-32379}:6379"
+
+  redis-queue:
+    # Expose for debugging with redis-cli
+    ports:
+      - "${REDIS_QUEUE_DEV_PORT:-32378}:6379"
+
+  # ---------------------------------------------------------------------------
+  # Workers with Debug Logging
+  # ---------------------------------------------------------------------------
+  worker-short:
+    environment:
+      LOG_LEVEL: DEBUG
+
+  worker-long:
+    environment:
+      LOG_LEVEL: DEBUG
+
+  worker-default:
+    environment:
+      LOG_LEVEL: DEBUG
+
+  scheduler:
+    environment:
+      LOG_LEVEL: DEBUG

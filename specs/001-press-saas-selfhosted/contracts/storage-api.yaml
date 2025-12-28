@@ -1,0 +1,193 @@
+openapi: 3.0.3
+info:
+  title: Storage Integration API (MinIO)
+  description: API pour l integration stockage S3/MinIO
+  version: 1.0.0
+
+servers:
+  - url: http://erp-saas-cloud-c16-minio:9000
+    description: MinIO S3 API (internal)
+  - url: http://localhost:32390
+    description: MinIO S3 API (external)
+
+tags:
+  - name: Buckets
+    description: Gestion des buckets
+  - name: Objects
+    description: Gestion des objets
+  - name: Presigned
+    description: URLs presignees
+
+paths:
+  /buckets:
+    get:
+      tags:
+        - Buckets
+      summary: Lister les buckets
+      operationId: listBuckets
+      security:
+        - s3Auth: []
+      responses:
+        '200':
+          description: Liste des buckets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  buckets:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        creation_date:
+                          type: string
+                          format: date-time
+
+  /{bucket}:
+    put:
+      tags:
+        - Buckets
+      summary: Creer un bucket
+      operationId: createBucket
+      security:
+        - s3Auth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Bucket cree
+        '409':
+          description: Bucket existe deja
+
+    delete:
+      tags:
+        - Buckets
+      summary: Supprimer un bucket
+      operationId: deleteBucket
+      security:
+        - s3Auth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Bucket supprime
+        '404':
+          description: Bucket non trouve
+        '409':
+          description: Bucket non vide
+
+  /{bucket}/{key}:
+    put:
+      tags:
+        - Objects
+      summary: Upload un objet
+      operationId: putObject
+      security:
+        - s3Auth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Objet uploade
+          headers:
+            ETag:
+              schema:
+                type: string
+
+    get:
+      tags:
+        - Objects
+      summary: Telecharger un objet
+      operationId: getObject
+      security:
+        - s3Auth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Contenu de l objet
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Objet non trouve
+
+    delete:
+      tags:
+        - Objects
+      summary: Supprimer un objet
+      operationId: deleteObject
+      security:
+        - s3Auth: []
+      parameters:
+        - name: bucket
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Objet supprime
+
+components:
+  securitySchemes:
+    s3Auth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: AWS Signature v4
+
+  schemas:
+    S3Error:
+      type: object
+      properties:
+        Code:
+          type: string
+        Message:
+          type: string
+        Resource:
+          type: string
+        RequestId:
+          type: string

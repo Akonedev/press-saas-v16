@@ -1,0 +1,129 @@
+# Global configuration
+global:
+  scrape_interval: 15s      # Scrape targets every 15 seconds
+  evaluation_interval: 15s  # Evaluate rules every 15 seconds
+  scrape_timeout: 10s       # Timeout after 10 seconds
+
+  # External labels added to all metrics
+  external_labels:
+    cluster: 'erp-saas-cloud-c16'
+    environment: 'selfhosted'
+
+# Alert rule files
+rule_files:
+  - '/etc/prometheus/alerts/*.yml'
+
+# Scrape configurations
+scrape_configs:
+  # -----------------------------------------------------------------------------
+  # Prometheus Self-Monitoring
+  # -----------------------------------------------------------------------------
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+          container: 'erp-saas-cloud-c16-prometheus'
+
+  # -----------------------------------------------------------------------------
+  # Node Exporter - Host Metrics
+  # -----------------------------------------------------------------------------
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['erp-saas-cloud-c16-node-exporter:9100']
+        labels:
+          service: 'node-exporter'
+          container: 'erp-saas-cloud-c16-node-exporter'
+          instance: 'host'
+
+  # -----------------------------------------------------------------------------
+  # cAdvisor - Container Metrics
+  # -----------------------------------------------------------------------------
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['erp-saas-cloud-c16-cadvisor:8080']
+        labels:
+          service: 'cadvisor'
+          container: 'erp-saas-cloud-c16-cadvisor'
+
+    # Relabel to extract container names
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'docker-host'
+
+  # -----------------------------------------------------------------------------
+  # Grafana Metrics
+  # -----------------------------------------------------------------------------
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['erp-saas-cloud-c16-grafana:3000']
+        labels:
+          service: 'grafana'
+          container: 'erp-saas-cloud-c16-grafana'
+
+  # -----------------------------------------------------------------------------
+  # MariaDB Exporter (if configured)
+  # -----------------------------------------------------------------------------
+  # Uncomment when MariaDB exporter is added
+  # - job_name: 'mariadb'
+  #   static_configs:
+  #     - targets: ['erp-saas-cloud-c16-mariadb-exporter:9104']
+  #       labels:
+  #         service: 'mariadb'
+  #         container: 'erp-saas-cloud-c16-mariadb'
+
+  # -----------------------------------------------------------------------------
+  # Redis Exporter (if configured)
+  # -----------------------------------------------------------------------------
+  # Uncomment when Redis exporter is added
+  # - job_name: 'redis-cache'
+  #   static_configs:
+  #     - targets: ['erp-saas-cloud-c16-redis-cache-exporter:9121']
+  #       labels:
+  #         service: 'redis-cache'
+  #         container: 'erp-saas-cloud-c16-redis-cache'
+  #
+  # - job_name: 'redis-queue'
+  #   static_configs:
+  #     - targets: ['erp-saas-cloud-c16-redis-queue-exporter:9121']
+  #       labels:
+  #         service: 'redis-queue'
+  #         container: 'erp-saas-cloud-c16-redis-queue'
+
+  # -----------------------------------------------------------------------------
+  # Frappe/Press Application Metrics (if configured)
+  # -----------------------------------------------------------------------------
+  # Uncomment when Frappe metrics endpoint is configured
+  # - job_name: 'frappe-press'
+  #   static_configs:
+  #     - targets: ['erp-saas-cloud-c16-press:8000']
+  #       labels:
+  #         service: 'press'
+  #         container: 'erp-saas-cloud-c16-press'
+  #   metrics_path: '/api/method/press.api.metrics'
+
+  # -----------------------------------------------------------------------------
+  # Traefik Metrics
+  # -----------------------------------------------------------------------------
+  # Uncomment when Traefik metrics are enabled
+  # - job_name: 'traefik'
+  #   static_configs:
+  #     - targets: ['erp-saas-cloud-c16-traefik:8080']
+  #       labels:
+  #         service: 'traefik'
+  #         container: 'erp-saas-cloud-c16-traefik'
+  #   metrics_path: '/metrics'
+
+  # -----------------------------------------------------------------------------
+  # MinIO Metrics
+  # -----------------------------------------------------------------------------
+  # Uncomment when MinIO metrics are enabled
+  # - job_name: 'minio'
+  #   static_configs:
+  #     - targets: ['erp-saas-cloud-c16-minio:9000']
+  #       labels:
+  #         service: 'minio'
+  #         container: 'erp-saas-cloud-c16-minio'
+  #   metrics_path: '/minio/v2/metrics/cluster'
+

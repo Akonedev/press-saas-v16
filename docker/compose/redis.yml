@@ -1,0 +1,122 @@
+# =============================================================================
+# Redis Services - ERP SaaS Cloud PRESSE v16
+# =============================================================================
+# Redis cache and queue servers for Frappe/Press framework
+# Constitution Constraint: Container prefix erp-saas-cloud-c16-*
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Redis Cache Server
+  # ---------------------------------------------------------------------------
+  redis-cache:
+    image: redis:7-alpine
+    container_name: erp-saas-cloud-c16-redis-cache
+    restart: unless-stopped
+
+    # Command with authentication
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD:-changeme}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+
+    # Port mapping (Constitution: 32300-32500)
+    ports:
+      - "${REDIS_CACHE_PORT:-32379}:6379"
+
+    # Volume mounts
+    volumes:
+      - redis_cache_data:/data
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: ${REDIS_MEMORY_LIMIT:-512m}
+        reservations:
+          memory: 128m
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # Network configuration
+    networks:
+      - erp-saas-cloud-c16-network
+
+    # Labels
+    labels:
+      - "traefik.enable=false"
+      - "com.erp-saas-cloud.service=cache"
+
+  # ---------------------------------------------------------------------------
+  # Redis Queue Server
+  # ---------------------------------------------------------------------------
+  redis-queue:
+    image: redis:7-alpine
+    container_name: erp-saas-cloud-c16-redis-queue
+    restart: unless-stopped
+
+    # Command with authentication
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD:-changeme}
+      --maxmemory 512mb
+      --maxmemory-policy noeviction
+
+    # Port mapping (Constitution: 32300-32500)
+    ports:
+      - "${REDIS_QUEUE_PORT:-32378}:6379"
+
+    # Volume mounts
+    volumes:
+      - redis_queue_data:/data
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: ${REDIS_MEMORY_LIMIT:-512m}
+        reservations:
+          memory: 128m
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # Network configuration
+    networks:
+      - erp-saas-cloud-c16-network
+
+    # Labels
+    labels:
+      - "traefik.enable=false"
+      - "com.erp-saas-cloud.service=queue"
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  redis_cache_data:
+    name: erp-saas-cloud-c16-redis-cache-data
+  redis_queue_data:
+    name: erp-saas-cloud-c16-redis-queue-data
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  erp-saas-cloud-c16-network:
+    name: erp-saas-cloud-c16-network
+    external: true

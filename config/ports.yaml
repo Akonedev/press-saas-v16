@@ -1,0 +1,177 @@
+# =============================================================================
+# Port Allocation Registry - ERP SaaS Cloud PRESSE v16
+# =============================================================================
+# Constitution Constraint: All ports MUST be in range 32300-32500
+# This file serves as the single source of truth for port assignments
+# =============================================================================
+
+version: "1.0"
+constraint:
+  min_port: 32300
+  max_port: 32500
+  prefix: "erp-saas-cloud-c16"
+
+# -----------------------------------------------------------------------------
+# Core Services
+# -----------------------------------------------------------------------------
+services:
+  # Reverse Proxy
+  traefik:
+    container: erp-saas-cloud-c16-traefik
+    ports:
+      http: 32380
+      https: 32443
+      dashboard: 32381
+    description: "Reverse proxy and SSL termination"
+
+  # Press Application
+  press:
+    container: erp-saas-cloud-c16-press
+    ports:
+      internal: 32300
+    description: "Main Press/Frappe application"
+
+  press-worker-short:
+    container: erp-saas-cloud-c16-worker-short
+    ports: []
+    description: "Short-running background jobs"
+
+  press-worker-long:
+    container: erp-saas-cloud-c16-worker-long
+    ports: []
+    description: "Long-running background jobs"
+
+  press-scheduler:
+    container: erp-saas-cloud-c16-scheduler
+    ports: []
+    description: "Scheduled tasks (cron-like)"
+
+  # Database
+  mariadb:
+    container: erp-saas-cloud-c16-mariadb
+    ports:
+      mysql: 32306
+    description: "MariaDB database server"
+
+  # Cache & Queue
+  redis-cache:
+    container: erp-saas-cloud-c16-redis-cache
+    ports:
+      redis: 32379
+    description: "Redis cache server"
+
+  redis-queue:
+    container: erp-saas-cloud-c16-redis-queue
+    ports:
+      redis: 32378
+    description: "Redis queue server for background jobs"
+
+  # Object Storage
+  minio:
+    container: erp-saas-cloud-c16-minio
+    ports:
+      api: 32390
+      console: 32391
+    description: "S3-compatible object storage"
+
+# -----------------------------------------------------------------------------
+# Monitoring Stack
+# -----------------------------------------------------------------------------
+monitoring:
+  prometheus:
+    container: erp-saas-cloud-c16-prometheus
+    ports:
+      http: 32392
+    description: "Metrics collection and alerting"
+
+  grafana:
+    container: erp-saas-cloud-c16-grafana
+    ports:
+      http: 32393
+    description: "Metrics visualization dashboards"
+
+  wazuh:
+    container: erp-saas-cloud-c16-wazuh
+    ports:
+      dashboard: 32394
+    description: "Security monitoring and SIEM"
+
+  node-exporter:
+    container: erp-saas-cloud-c16-node-exporter
+    ports: []
+    description: "Host metrics exporter"
+
+  cadvisor:
+    container: erp-saas-cloud-c16-cadvisor
+    ports: []
+    description: "Container metrics exporter"
+
+  alertmanager:
+    container: erp-saas-cloud-c16-alertmanager
+    ports:
+      http: 32395
+    description: "Alert routing and notifications"
+
+# -----------------------------------------------------------------------------
+# Optional Services
+# -----------------------------------------------------------------------------
+optional:
+  # Local Docker Registry
+  registry:
+    container: erp-saas-cloud-c16-registry
+    ports:
+      http: 32396
+    description: "Local Docker image registry"
+    enabled: false
+
+  # Email (Development)
+  mailhog:
+    container: erp-saas-cloud-c16-mailhog
+    ports:
+      smtp: 32325
+      ui: 32326
+    description: "Development email capture"
+    enabled: true
+
+  # DNS (P3 Priority)
+  powerdns:
+    container: erp-saas-cloud-c16-powerdns
+    ports:
+      dns: 32353
+      api: 32354
+    description: "Local DNS management"
+    enabled: false
+
+# -----------------------------------------------------------------------------
+# Port Ranges Reserved for Future Use
+# -----------------------------------------------------------------------------
+reserved:
+  tenant_sites:
+    start: 32400
+    end: 32450
+    description: "Reserved for dynamic tenant site ports if needed"
+
+  future:
+    start: 32451
+    end: 32500
+    description: "Reserved for future services"
+
+# -----------------------------------------------------------------------------
+# Validation Rules
+# -----------------------------------------------------------------------------
+validation:
+  rules:
+    - "All ports must be unique"
+    - "All ports must be in range 32300-32500"
+    - "Container names must start with erp-saas-cloud-c16-"
+    - "No default ports (80, 443, 3306, 6379, etc.)"
+
+  excluded_ports:
+    - 80
+    - 443
+    - 3306
+    - 5432
+    - 6379
+    - 8080
+    - 8000
+    - 27017

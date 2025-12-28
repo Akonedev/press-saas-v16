@@ -1,0 +1,109 @@
+# =============================================================================
+# Press Service - ERP SaaS Cloud PRESSE v16
+# =============================================================================
+# Main Frappe Press application server
+# Constitution Constraint: Container prefix erp-saas-cloud-c16-*
+# =============================================================================
+
+services:
+  press:
+    build:
+      context: ../..
+      dockerfile: docker/images/press/Dockerfile
+      target: ${BUILD_TARGET:-production}
+      args:
+        FRAPPE_VERSION: ${FRAPPE_BRANCH:-develop}
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+
+    image: erp-saas-cloud-c16-press:${PRESS_VERSION:-latest}
+    container_name: erp-saas-cloud-c16-press
+    restart: unless-stopped
+
+    # Environment configuration
+    environment:
+      # Database
+      DB_HOST: erp-saas-cloud-c16-mariadb
+      DB_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      # Redis
+      REDIS_CACHE: redis://:${REDIS_PASSWORD}@erp-saas-cloud-c16-redis-cache:6379
+      REDIS_QUEUE: redis://:${REDIS_PASSWORD}@erp-saas-cloud-c16-redis-queue:6379
+      # MinIO/S3
+      MINIO_ENDPOINT: http://erp-saas-cloud-c16-minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET_FILES: ${MINIO_BUCKET_FILES:-erp-saas-cloud-c16-files}
+      MINIO_BUCKET_BACKUPS: ${MINIO_BUCKET_BACKUPS:-erp-saas-cloud-c16-backups}
+      # Site configuration
+      SITE_NAME: ${SITE_NAME:-press.platform.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      # Development mode
+      DEVELOPER_MODE: ${DEVELOPER_MODE:-0}
+      # Workers
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-4}
+
+    # Port mapping (Constitution: 32300-32500)
+    ports:
+      - "${PRESS_PORT:-32300}:8000"
+
+    # Volume mounts
+    volumes:
+      - press_sites:/home/frappe/frappe-bench/sites
+      - press_logs:/home/frappe/frappe-bench/logs
+      # Mount custom app for development
+      - ../../apps/press_selfhosted:/home/frappe/frappe-bench/apps/press_selfhosted:ro
+
+    # Dependencies
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-queue:
+        condition: service_healthy
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: ${PRESS_MEMORY_LIMIT:-4g}
+        reservations:
+          memory: 1g
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/method/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+    # Network configuration
+    networks:
+      - erp-saas-cloud-c16-network
+
+    # Labels for Traefik routing
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.press.rule=Host(`${PRESS_SUBDOMAIN:-press}.${DOMAIN:-platform.local}`)"
+      - "traefik.http.routers.press.entrypoints=websecure"
+      - "traefik.http.routers.press.tls=true"
+      - "traefik.http.routers.press.tls.certresolver=${CERT_RESOLVER:-local}"
+      - "traefik.http.services.press.loadbalancer.server.port=8000"
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  press_sites:
+    name: erp-saas-cloud-c16-press-sites
+  press_logs:
+    name: erp-saas-cloud-c16-press-logs
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  erp-saas-cloud-c16-network:
+    name: erp-saas-cloud-c16-network
+    external: true

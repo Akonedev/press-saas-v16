@@ -1,0 +1,182 @@
+# =============================================================================
+# Press Worker Services - ERP SaaS Cloud PRESSE v16
+# =============================================================================
+# Background job workers for Frappe Press
+# Constitution Constraint: Container prefix erp-saas-cloud-c16-*
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Short Queue Worker
+  # ---------------------------------------------------------------------------
+  worker-short:
+    image: erp-saas-cloud-c16-press:${PRESS_VERSION:-latest}
+    container_name: erp-saas-cloud-c16-worker-short
+    restart: unless-stopped
+
+    command: bench worker --queue short
+
+    environment:
+      DB_HOST: erp-saas-cloud-c16-mariadb
+      DB_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      REDIS_CACHE: redis://:${REDIS_PASSWORD}@erp-saas-cloud-c16-redis-cache:6379
+      REDIS_QUEUE: redis://:${REDIS_PASSWORD}@erp-saas-cloud-c16-redis-queue:6379
+      SITE_NAME: ${SITE_NAME:-press.platform.local}
+
+    volumes:
+      - press_sites:/home/frappe/frappe-bench/sites
+      - press_logs:/home/frappe/frappe-bench/logs
+
+    depends_on:
+      - press
+
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+        reservations:
+          memory: 256m
+
+    networks:
+      - erp-saas-cloud-c16-network
+
+    labels:
+      - "traefik.enable=false"
+      - "com.erp-saas-cloud.service=worker-short"
+
+  # ---------------------------------------------------------------------------
+  # Long Queue Worker
+  # ---------------------------------------------------------------------------
+  worker-long:
+    image: erp-saas-cloud-c16-press:${PRESS_VERSION:-latest}
+    container_name: erp-saas-cloud-c16-worker-long
+    restart: unless-stopped
+
+    command: bench worker --queue long
+
+    environment:
+      DB_HOST: erp-saas-cloud-c16-mariadb
+      DB_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      REDIS_CACHE: redis://:${REDIS_PASSWORD}@erp-saas-cloud-c16-redis-cache:6379
+      REDIS_QUEUE: redis://:${REDIS_PASSWORD}@erp-saas-cloud-c16-redis-queue:6379
+      SITE_NAME: ${SITE_NAME:-press.platform.local}
+
+    volumes:
+      - press_sites:/home/frappe/frappe-bench/sites
+      - press_logs:/home/frappe/frappe-bench/logs
+
+    depends_on:
+      - press
+
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+        reservations:
+          memory: 512m
+
+    networks:
+      - erp-saas-cloud-c16-network
+
+    labels:
+      - "traefik.enable=false"
+      - "com.erp-saas-cloud.service=worker-long"
+
+  # ---------------------------------------------------------------------------
+  # Default Queue Worker
+  # ---------------------------------------------------------------------------
+  worker-default:
+    image: erp-saas-cloud-c16-press:${PRESS_VERSION:-latest}
+    container_name: erp-saas-cloud-c16-worker-default
+    restart: unless-stopped
+
+    command: bench worker --queue default
+
+    environment:
+      DB_HOST: erp-saas-cloud-c16-mariadb
+      DB_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      REDIS_CACHE: redis://:${REDIS_PASSWORD}@erp-saas-cloud-c16-redis-cache:6379
+      REDIS_QUEUE: redis://:${REDIS_PASSWORD}@erp-saas-cloud-c16-redis-queue:6379
+      SITE_NAME: ${SITE_NAME:-press.platform.local}
+
+    volumes:
+      - press_sites:/home/frappe/frappe-bench/sites
+      - press_logs:/home/frappe/frappe-bench/logs
+
+    depends_on:
+      - press
+
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+        reservations:
+          memory: 256m
+
+    networks:
+      - erp-saas-cloud-c16-network
+
+    labels:
+      - "traefik.enable=false"
+      - "com.erp-saas-cloud.service=worker-default"
+
+  # ---------------------------------------------------------------------------
+  # Scheduler
+  # ---------------------------------------------------------------------------
+  scheduler:
+    image: erp-saas-cloud-c16-press:${PRESS_VERSION:-latest}
+    container_name: erp-saas-cloud-c16-scheduler
+    restart: unless-stopped
+
+    command: bench schedule
+
+    environment:
+      DB_HOST: erp-saas-cloud-c16-mariadb
+      DB_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      REDIS_CACHE: redis://:${REDIS_PASSWORD}@erp-saas-cloud-c16-redis-cache:6379
+      REDIS_QUEUE: redis://:${REDIS_PASSWORD}@erp-saas-cloud-c16-redis-queue:6379
+      SITE_NAME: ${SITE_NAME:-press.platform.local}
+
+    volumes:
+      - press_sites:/home/frappe/frappe-bench/sites
+      - press_logs:/home/frappe/frappe-bench/logs
+
+    depends_on:
+      - press
+
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+        reservations:
+          memory: 128m
+
+    networks:
+      - erp-saas-cloud-c16-network
+
+    labels:
+      - "traefik.enable=false"
+      - "com.erp-saas-cloud.service=scheduler"
+
+# =============================================================================
+# Volumes (external - created by press.yml)
+# =============================================================================
+volumes:
+  press_sites:
+    name: erp-saas-cloud-c16-press-sites
+    external: true
+  press_logs:
+    name: erp-saas-cloud-c16-press-logs
+    external: true
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  erp-saas-cloud-c16-network:
+    name: erp-saas-cloud-c16-network
+    external: true

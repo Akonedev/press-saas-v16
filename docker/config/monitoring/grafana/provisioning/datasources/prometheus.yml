@@ -1,0 +1,29 @@
+# =============================================================================
+# Grafana Datasource Provisioning - Prometheus
+# =============================================================================
+# Automatically provisions Prometheus as a datasource in Grafana
+# =============================================================================
+
+apiVersion: 1
+
+datasources:
+  # Prometheus datasource
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://erp-saas-cloud-c16-prometheus:9090
+    isDefault: true
+    editable: true
+
+    jsonData:
+      httpMethod: POST
+      timeInterval: 15s
+
+      # Query timeout
+      queryTimeout: 60s
+
+      # Enable exemplars
+      exemplarTraceIdDestinations: []
+
+    # Version
+    version: 1

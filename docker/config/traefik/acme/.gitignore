@@ -1,0 +1,19 @@
+# ACME Certificates - DO NOT COMMIT
+# These files contain private keys and sensitive data
+
+# Let's Encrypt certificates
+acme.json
+acme-staging.json
+
+# Development certificates
+cert.pem
+key.pem
+*.pem
+
+# Backup files
+*.bak
+*.backup
+
+# Allow tracking README and structure
+!README.md
+!.gitignore

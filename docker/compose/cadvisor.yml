@@ -1,0 +1,62 @@
+# =============================================================================
+# cAdvisor - Container Metrics Collection
+# =============================================================================
+# cAdvisor exposes Docker container metrics (CPU, memory, network, disk I/O)
+# Constitution Constraint: Container prefix erp-saas-cloud-c16-*
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # cAdvisor Container Metrics
+  # ---------------------------------------------------------------------------
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: erp-saas-cloud-c16-cadvisor
+    hostname: erp-saas-cloud-c16-cadvisor
+    restart: unless-stopped
+
+    # No external port mapping - only accessible within Docker network
+    expose:
+      - "8080"
+
+    # Volumes - Access to Docker and system metrics
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+
+    # Privileged mode required for full container access
+    privileged: true
+
+    # Devices
+    devices:
+      - /dev/kmsg
+
+    # Environment
+    environment:
+      TZ: "UTC"
+
+    # Command - Configure options
+    command:
+      - '--housekeeping_interval=10s'
+      - '--docker_only=true'
+      - '--store_container_labels=true'
+
+    # Network
+    networks:
+      - erp-saas-cloud-c16-network
+
+    # Labels
+    labels:
+      com.press.selfhosted.service: "cadvisor"
+      com.press.selfhosted.description: "Container metrics exporter for Prometheus"
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  erp-saas-cloud-c16-network:
+    external: true
+    name: erp-saas-cloud-c16-network

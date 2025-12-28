@@ -1,0 +1,20 @@
+# =============================================================================
+# Grafana Dashboard Provisioning
+# =============================================================================
+# Automatically loads dashboards from the dashboards directory
+# =============================================================================
+
+apiVersion: 1
+
+providers:
+  # Default dashboard provider
+  - name: 'Default'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: true

@@ -1,0 +1,331 @@
+openapi: 3.0.3
+info:
+  title: Press Self-Hosted API
+  description: API pour la gestion de la plateforme SaaS self-hosted
+  version: 1.0.0
+  contact:
+    name: ERP SaaS Cloud Team
+
+servers:
+  - url: https://press.platform.local/api
+    description: Production server
+  - url: http://localhost:32300/api
+    description: Development server
+
+tags:
+  - name: Sites
+    description: Gestion des sites tenants
+  - name: Backups
+    description: Gestion des sauvegardes
+  - name: Servers
+    description: Gestion des serveurs
+  - name: Health
+    description: Verification de sante
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Verification de sante de la plateforme
+      operationId: getHealth
+      responses:
+        '200':
+          description: Plateforme operationnelle
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, degraded, unhealthy]
+                  services:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                      redis:
+                        type: string
+                      minio:
+                        type: string
+                      workers:
+                        type: string
+
+  /method/press.api.site.new:
+    post:
+      tags:
+        - Sites
+      summary: Creer un nouveau site tenant
+      operationId: createSite
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - subdomain
+                - group
+              properties:
+                subdomain:
+                  type: string
+                  description: Sous-domaine du site
+                  example: demo
+                group:
+                  type: string
+                  description: Release Group pour le site
+                apps:
+                  type: array
+                  items:
+                    type: string
+                  description: Apps a installer
+                plan:
+                  type: string
+                  description: Plan tarifaire
+                  default: Free
+      responses:
+        '200':
+          description: Site cree avec succes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  site:
+                    type: string
+        '400':
+          description: Requete invalide
+        '401':
+          description: Non authentifie
+        '403':
+          description: Non autorise
+
+  /method/press.api.site.info:
+    get:
+      tags:
+        - Sites
+      summary: Obtenir les informations d un site
+      operationId: getSiteInfo
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Nom du site
+      responses:
+        '200':
+          description: Informations du site
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  status:
+                    type: string
+                    enum: [pending, active, suspended, archived]
+                  bench:
+                    type: string
+                  apps:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        app:
+                          type: string
+                        version:
+                          type: string
+                  plan:
+                    type: string
+                  created:
+                    type: string
+                    format: date-time
+
+  /method/press.api.site.archive:
+    post:
+      tags:
+        - Sites
+      summary: Archiver un site
+      operationId: archiveSite
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: Nom du site a archiver
+      responses:
+        '200':
+          description: Site archive
+        '404':
+          description: Site non trouve
+
+  /method/press.api.site.backup:
+    post:
+      tags:
+        - Backups
+      summary: Declencher un backup
+      operationId: triggerBackup
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: Nom du site
+                with_files:
+                  type: boolean
+                  default: true
+      responses:
+        '200':
+          description: Backup declenche
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  backup:
+                    type: string
+                    description: ID du backup
+
+  /method/press.api.site.backups:
+    get:
+      tags:
+        - Backups
+      summary: Lister les backups d un site
+      operationId: listBackups
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Liste des backups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    status:
+                      type: string
+                    size:
+                      type: integer
+                    created:
+                      type: string
+                      format: date-time
+
+  /method/press.api.server.list:
+    get:
+      tags:
+        - Servers
+      summary: Lister les serveurs
+      operationId: listServers
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liste des serveurs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    hostname:
+                      type: string
+                    server_type:
+                      type: string
+                    status:
+                      type: string
+                    cluster:
+                      type: string
+
+  /method/press.api.server.status:
+    get:
+      tags:
+        - Servers
+      summary: Obtenir le statut d un serveur
+      operationId: getServerStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Statut du serveur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  status:
+                    type: string
+                  cpu_usage:
+                    type: number
+                  memory_usage:
+                    type: number
+                  disk_usage:
+                    type: number
+                  containers:
+                    type: integer
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+        error:
+          type: string

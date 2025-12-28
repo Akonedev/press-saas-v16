@@ -1,0 +1,69 @@
+# =============================================================================
+# MariaDB Service - ERP SaaS Cloud PRESSE v16
+# =============================================================================
+# Database server for Frappe/Press framework
+# Constitution Constraint: Container prefix erp-saas-cloud-c16-*
+# =============================================================================
+
+services:
+  mariadb:
+    image: mariadb:10.6
+    container_name: erp-saas-cloud-c16-mariadb
+    restart: unless-stopped
+
+    # Environment configuration
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-changeme}
+      MYSQL_DATABASE: ${MARIADB_DATABASE:-press}
+      MYSQL_USER: ${MARIADB_USER:-press}
+      MYSQL_PASSWORD: ${MARIADB_PASSWORD:-changeme}
+      MYSQL_CHARACTER_SET_SERVER: ${MARIADB_CHARACTER_SET:-utf8mb4}
+      MYSQL_COLLATION_SERVER: ${MARIADB_COLLATION:-utf8mb4_unicode_ci}
+
+    # Port mapping (Constitution: 32300-32500)
+    ports:
+      - "${MARIADB_PORT:-32306}:3306"
+
+    # Volume mounts
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./config/mariadb/my.cnf:/etc/mysql/conf.d/frappe.cnf:ro
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: ${MARIADB_MEMORY_LIMIT:-2g}
+        reservations:
+          memory: 512m
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+    # Network configuration
+    networks:
+      - erp-saas-cloud-c16-network
+
+    # Labels for Traefik (internal only, no external exposure)
+    labels:
+      - "traefik.enable=false"
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  mariadb_data:
+    name: erp-saas-cloud-c16-mariadb-data
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  erp-saas-cloud-c16-network:
+    name: erp-saas-cloud-c16-network
+    external: true

@@ -1,0 +1,35 @@
+{
+  "db_host": "erp-saas-cloud-c16-mariadb",
+  "db_port": 3306,
+  "redis_cache": "redis://:${REDIS_PASSWORD}@erp-saas-cloud-c16-redis-cache:6379",
+  "redis_queue": "redis://:${REDIS_PASSWORD}@erp-saas-cloud-c16-redis-queue:6379",
+  "redis_socketio": "redis://:${REDIS_PASSWORD}@erp-saas-cloud-c16-redis-queue:6379",
+  "socketio_port": 9000,
+  "webserver_port": 8000,
+  "file_watcher_port": 6787,
+
+  "developer_mode": 0,
+  "disable_scheduler": 0,
+  "pause_scheduler": 0,
+
+  "mail_server": "erp-saas-cloud-c16-mailhog",
+  "mail_port": 1025,
+  "use_ssl": 0,
+  "auto_email_id": "noreply@platform.local",
+
+  "s3_bucket": "erp-saas-cloud-c16-files",
+  "s3_endpoint_url": "http://erp-saas-cloud-c16-minio:9000",
+  "s3_access_key_id": "${MINIO_ROOT_USER}",
+  "s3_secret_access_key": "${MINIO_ROOT_PASSWORD}",
+  "s3_region": "us-east-1",
+  "s3_force_path_style": true,
+
+  "backup_bucket": "erp-saas-cloud-c16-backups",
+
+  "monitor": 1,
+  "logging": 1,
+
+  "deny_multiple_sessions": 0,
+  "session_expiry": "24:00:00",
+  "session_expiry_mobile": "720:00:00"
+}

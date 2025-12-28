@@ -1,0 +1,52 @@
+# =============================================================================
+# Main Docker Compose Orchestrator - ERP SaaS Cloud PRESSE v16
+# =============================================================================
+# This file orchestrates all services for the Press Self-Hosted platform
+# Constitution Constraint: Container prefix erp-saas-cloud-c16-*
+# Constitution Constraint: Port range 32300-32500
+# =============================================================================
+
+# Include all service-specific compose files
+include:
+  - mariadb.yml
+  - redis.yml
+  - press.yml
+  - press-worker.yml
+
+# =============================================================================
+# Shared Network Configuration
+# =============================================================================
+# All services communicate via this internal network
+# External access is controlled via Traefik reverse proxy
+# =============================================================================
+networks:
+  erp-saas-cloud-c16-network:
+    name: erp-saas-cloud-c16-network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+
+# =============================================================================
+# Named Volumes
+# =============================================================================
+# Persistent storage for all services
+# Constitution: All volumes prefixed with erp-saas-cloud-c16-
+# =============================================================================
+volumes:
+  # MariaDB data persistence
+  erp-saas-cloud-c16-mariadb-data:
+    name: erp-saas-cloud-c16-mariadb-data
+
+  # Redis persistence (optional, can be ephemeral)
+  erp-saas-cloud-c16-redis-cache-data:
+    name: erp-saas-cloud-c16-redis-cache-data
+  erp-saas-cloud-c16-redis-queue-data:
+    name: erp-saas-cloud-c16-redis-queue-data
+
+  # Press application data
+  erp-saas-cloud-c16-press-sites:
+    name: erp-saas-cloud-c16-press-sites
+  erp-saas-cloud-c16-press-logs:
+    name: erp-saas-cloud-c16-press-logs

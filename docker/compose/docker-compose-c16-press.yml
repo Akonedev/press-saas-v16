@@ -1,0 +1,179 @@
+# =============================================================================
+# Press C16 Application Stack - INDEPENDENT
+# =============================================================================
+# This compose file ONLY manages Press application services
+# It USES existing infrastructure (mariadb, redis, minio) via external network
+# Constitution: erp-saas-cloud-c16-* naming, ports 32300-32500
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # Press Backend Service
+  # ===========================================================================
+  press:
+    image: erp-saas-cloud-c16-press:latest
+    container_name: erp-saas-cloud-c16-press
+    restart: unless-stopped
+
+    environment:
+      # Database (EXTERNAL - already running)
+      DB_HOST: erp-saas-cloud-c16-mariadb
+      DB_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-changeme}
+
+      # Redis (EXTERNAL - already running)
+      REDIS_CACHE: redis://:${REDIS_PASSWORD:-changeme}@erp-saas-cloud-c16-redis-cache:6379
+      REDIS_QUEUE: redis://:${REDIS_PASSWORD:-changeme}@erp-saas-cloud-c16-redis-queue:6379
+      REDIS_SOCKETIO: redis://:${REDIS_PASSWORD:-changeme}@erp-saas-cloud-c16-redis-queue:6379
+
+      # MinIO/S3 (EXTERNAL - already running)
+      MINIO_ENDPOINT: http://erp-saas-cloud-c16-minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+
+      # Site configuration
+      SITE_NAME: ${SITE_NAME:-press.platform.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
+      DEVELOPER_MODE: ${DEVELOPER_MODE:-0}
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-4}
+
+    ports:
+      - "${PRESS_PORT:-32300}:8000"
+
+    volumes:
+      - erp-saas-cloud-c16-press-sites:/home/frappe/frappe-bench/sites
+      - erp-saas-cloud-c16-press-logs:/home/frappe/frappe-bench/logs
+
+    networks:
+      - erp-saas-cloud-c16-network
+
+    working_dir: /home/frappe/frappe-bench
+    command: >
+      bash -c "export PYTHONPATH=/home/frappe/frappe-bench/apps:/home/frappe/frappe-bench/apps/press:/home/frappe/frappe-bench/apps/storage_integration &&
+      /home/frappe/.local/bin/bench serve --port 8000 --noreload --nothreading"
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/method/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  # ===========================================================================
+  # Press Scheduler
+  # ===========================================================================
+  press-scheduler:
+    image: erp-saas-cloud-c16-press:latest
+    container_name: erp-saas-cloud-c16-press-scheduler
+    restart: unless-stopped
+
+    environment:
+      DB_HOST: erp-saas-cloud-c16-mariadb
+      DB_PORT: 3306
+      REDIS_CACHE: redis://:${REDIS_PASSWORD:-changeme}@erp-saas-cloud-c16-redis-cache:6379
+      REDIS_QUEUE: redis://:${REDIS_PASSWORD:-changeme}@erp-saas-cloud-c16-redis-queue:6379
+      SITE_NAME: ${SITE_NAME:-press.platform.local}
+
+    volumes:
+      - erp-saas-cloud-c16-press-sites:/home/frappe/frappe-bench/sites
+      - erp-saas-cloud-c16-press-logs:/home/frappe/frappe-bench/logs
+
+    networks:
+      - erp-saas-cloud-c16-network
+
+    command: >
+      bash -c "cd /home/frappe/frappe-bench/sites && /home/frappe/frappe-bench/env/bin/python -m frappe.utils.bench_helper frappe schedule"
+
+  # ===========================================================================
+  # Press Worker - Default Queue
+  # ===========================================================================
+  press-worker-default:
+    image: erp-saas-cloud-c16-press:latest
+    container_name: erp-saas-cloud-c16-press-worker-default
+    restart: unless-stopped
+
+    environment:
+      DB_HOST: erp-saas-cloud-c16-mariadb
+      DB_PORT: 3306
+      REDIS_CACHE: redis://:${REDIS_PASSWORD:-changeme}@erp-saas-cloud-c16-redis-cache:6379
+      REDIS_QUEUE: redis://:${REDIS_PASSWORD:-changeme}@erp-saas-cloud-c16-redis-queue:6379
+      SITE_NAME: ${SITE_NAME:-press.platform.local}
+
+    volumes:
+      - erp-saas-cloud-c16-press-sites:/home/frappe/frappe-bench/sites
+      - erp-saas-cloud-c16-press-logs:/home/frappe/frappe-bench/logs
+
+    networks:
+      - erp-saas-cloud-c16-network
+
+    command: >
+      bash -c "cd /home/frappe/frappe-bench/sites && /home/frappe/frappe-bench/env/bin/python -m frappe.utils.bench_helper frappe worker --queue default"
+
+  # ===========================================================================
+  # Press Worker - Short Queue
+  # ===========================================================================
+  press-worker-short:
+    image: erp-saas-cloud-c16-press:latest
+    container_name: erp-saas-cloud-c16-press-worker-short
+    restart: unless-stopped
+
+    environment:
+      DB_HOST: erp-saas-cloud-c16-mariadb
+      DB_PORT: 3306
+      REDIS_CACHE: redis://:${REDIS_PASSWORD:-changeme}@erp-saas-cloud-c16-redis-cache:6379
+      REDIS_QUEUE: redis://:${REDIS_PASSWORD:-changeme}@erp-saas-cloud-c16-redis-queue:6379
+      SITE_NAME: ${SITE_NAME:-press.platform.local}
+
+    volumes:
+      - erp-saas-cloud-c16-press-sites:/home/frappe/frappe-bench/sites
+      - erp-saas-cloud-c16-press-logs:/home/frappe/frappe-bench/logs
+
+    networks:
+      - erp-saas-cloud-c16-network
+
+    command: >
+      bash -c "cd /home/frappe/frappe-bench/sites && /home/frappe/frappe-bench/env/bin/python -m frappe.utils.bench_helper frappe worker --queue short"
+
+  # ===========================================================================
+  # Press Worker - Long Queue
+  # ===========================================================================
+  press-worker-long:
+    image: erp-saas-cloud-c16-press:latest
+    container_name: erp-saas-cloud-c16-press-worker-long
+    restart: unless-stopped
+
+    environment:
+      DB_HOST: erp-saas-cloud-c16-mariadb
+      DB_PORT: 3306
+      REDIS_CACHE: redis://:${REDIS_PASSWORD:-changeme}@erp-saas-cloud-c16-redis-cache:6379
+      REDIS_QUEUE: redis://:${REDIS_PASSWORD:-changeme}@erp-saas-cloud-c16-redis-queue:6379
+      SITE_NAME: ${SITE_NAME:-press.platform.local}
+
+    volumes:
+      - erp-saas-cloud-c16-press-sites:/home/frappe/frappe-bench/sites
+      - erp-saas-cloud-c16-press-logs:/home/frappe/frappe-bench/logs
+
+    networks:
+      - erp-saas-cloud-c16-network
+
+    command: >
+      bash -c "cd /home/frappe/frappe-bench/sites && /home/frappe/frappe-bench/env/bin/python -m frappe.utils.bench_helper frappe worker --queue long"
+
+# =============================================================================
+# Networks - EXTERNAL (already created by infrastructure stack)
+# =============================================================================
+networks:
+  erp-saas-cloud-c16-network:
+    name: erp-saas-cloud-c16-network
+    external: true
+
+# =============================================================================
+# Volumes - EXTERNAL (already created or will be created)
+# =============================================================================
+volumes:
+  erp-saas-cloud-c16-press-sites:
+    name: erp-saas-cloud-c16-press-sites
+    external: true
+  erp-saas-cloud-c16-press-logs:
+    name: erp-saas-cloud-c16-press-logs
+    external: true

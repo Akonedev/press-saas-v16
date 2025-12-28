@@ -1,0 +1,45 @@
+exclude: 'node_modules|.git'
+default_stages: [pre-commit]
+fail_fast: false
+
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.13
+    hooks:
+      - id: ruff
+        name: "Run ruff import sorter"
+        args: ["--select=I", "--fix"]
+
+      - id: ruff
+        name: "Run ruff linter"
+
+      - id: ruff-format
+        name: "Run ruff formatter"
+
+  - repo: https://github.com/JoC0de/pre-commit-prettier
+    rev: v3.5.3
+    hooks:
+      - id: prettier
+        types_or:
+          - javascript
+          - vue
+        additional_dependencies:
+          - prettier@3.3.3
+          - prettier-plugin-tailwindcss
+        args:
+          - --plugin=prettier-plugin-tailwindcss
+        exclude: |
+            (?x)^(
+                frappe/public/dist/.*|
+                .*node_modules.*|
+                .*boilerplate.*|
+                .*src.*.js|
+                builder/public/js/identify.js|
+                builder/public/js/posthog.js|
+            )$
+
+ci:
+    autoupdate_schedule: weekly
+    skip: []
+    submodules: false

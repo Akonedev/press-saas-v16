@@ -1,0 +1,109 @@
+# =============================================================================
+# Traefik Dynamic Configuration - Press Service
+# =============================================================================
+# This file contains Press-specific routing rules
+# Constitution Constraint: Part of erp-saas-cloud-c16 infrastructure
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# HTTP Routers for Press
+# -----------------------------------------------------------------------------
+http:
+  routers:
+    # Main Press dashboard
+    press-dashboard:
+      entryPoints:
+        - web
+        - websecure
+      rule: "Host(`press.platform.local`)"
+      service: press-backend
+      priority: 100
+      middlewares:
+        - security-headers
+        - compress
+      tls:
+        certResolver: letsencrypt
+
+    # Press API endpoints
+    press-api:
+      entryPoints:
+        - web
+        - websecure
+      rule: "Host(`press.platform.local`) && PathPrefix(`/api`)"
+      service: press-backend
+      priority: 110
+      middlewares:
+        - security-headers
+        - rate-limit
+      tls:
+        certResolver: letsencrypt
+
+    # Press static assets
+    press-assets:
+      entryPoints:
+        - web
+        - websecure
+      rule: "Host(`press.platform.local`) && PathPrefix(`/assets`)"
+      service: press-backend
+      priority: 105
+      middlewares:
+        - security-headers
+        - compress
+      tls:
+        certResolver: letsencrypt
+
+  # ---------------------------------------------------------------------------
+  # Services
+  # ---------------------------------------------------------------------------
+  services:
+    # Press main service
+    press-backend:
+      loadBalancer:
+        servers:
+          - url: "http://erp-saas-cloud-c16-press:8000"
+        healthCheck:
+          path: "/api/method/ping"
+          interval: "30s"
+          timeout: "5s"
+        sticky:
+          cookie:
+            name: "press_session"
+            httpOnly: true
+            secure: true
+
+  # ---------------------------------------------------------------------------
+  # Middlewares for Press
+  # ---------------------------------------------------------------------------
+  middlewares:
+    # Security headers
+    security-headers:
+      headers:
+        frameDeny: false  # Allow iframes for Frappe
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        contentSecurityPolicy: "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: https:; font-src 'self' data:;"
+        customResponseHeaders:
+          X-Powered-By: "Frappe Press Self-Hosted"
+          X-Frame-Options: "SAMEORIGIN"
+
+    # Compress responses
+    compress:
+      compress:
+        excludedContentTypes:
+          - text/event-stream
+
+    # Rate limiting for API
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 200
+        period: 1m
+        sourceCriterion:
+          requestHost: true
+
+    # Retry on failure
+    retry:
+      retry:
+        attempts: 3
+        initialInterval: 100ms

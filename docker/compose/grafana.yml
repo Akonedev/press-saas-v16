@@ -1,0 +1,100 @@
+# =============================================================================
+# Grafana Visualization Dashboard - ERP SaaS Cloud PRESSE v16
+# =============================================================================
+# Grafana provides dashboards and visualization for metrics
+# Constitution Constraint: Container prefix erp-saas-cloud-c16-*
+# Constitution Constraint: Port 32393
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Grafana Dashboard
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: erp-saas-cloud-c16-grafana
+    hostname: erp-saas-cloud-c16-grafana
+    restart: unless-stopped
+
+    # Port Mapping (Constitution: 32300-32500)
+    ports:
+      - "${GRAFANA_PORT:-32393}:3000"
+
+    # Volumes
+    volumes:
+      # Data persistence
+      - grafana-data:/var/lib/grafana
+
+      # Provisioning - Datasources
+      - ../config/monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+
+      # Provisioning - Dashboards
+      - ../config/monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+
+      # Dashboard JSON files
+      - ../config/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+    # Environment
+    environment:
+      # Admin credentials
+      GF_SECURITY_ADMIN_USER: "${GRAFANA_ADMIN_USER:-admin}"
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-admin}"
+
+      # Server settings
+      GF_SERVER_ROOT_URL: "http://localhost:32393"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "false"
+
+      # Anonymous access (disabled by default)
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+
+      # Disable telemetry
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+
+      # Provisioning
+      GF_PATHS_PROVISIONING: "/etc/grafana/provisioning"
+
+      # Logging
+      GF_LOG_MODE: "console"
+      GF_LOG_LEVEL: "info"
+
+      # Timezone
+      TZ: "UTC"
+
+      # Install plugins
+      GF_INSTALL_PLUGINS: ""
+
+    # Health Check
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # Network
+    networks:
+      - erp-saas-cloud-c16-network
+
+    # Dependencies
+
+    # Labels
+    labels:
+      com.press.selfhosted.service: "grafana"
+      com.press.selfhosted.description: "Metrics visualization and dashboards"
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  grafana-data:
+    name: erp-saas-cloud-c16-grafana-data
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  erp-saas-cloud-c16-network:
+    external: true
+    name: erp-saas-cloud-c16-network

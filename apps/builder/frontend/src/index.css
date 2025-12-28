@@ -1,0 +1,67 @@
+@import "frappe-ui/style.css";
+
+@layer base {
+	ul,
+	ol {
+		list-style: revert;
+		padding: revert;
+	}
+}
+
+/* to match style of tip tap editor for new lines */
+p:empty::before {
+	content: "";
+	display: inline-block;
+}
+
+.__text_block__ {
+	overflow-wrap: break-word;
+}
+
+.__text_block__ a {
+	color: var(--link-color);
+	text-decoration: underline;
+	background-color: transparent;
+}
+
+@layer utilities {
+	/* Chrome, Safari and Opera */
+	.no-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+
+	.no-scrollbar {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
+
+	.show-scrollbar::-webkit-scrollbar {
+		display: block;
+	}
+	.show-scrollbar {
+		-ms-overflow-style: auto;
+		scrollbar-width: auto;
+	}
+}
+
+*:not(.canvas, .canvas *) {
+	&::-webkit-scrollbar {
+		@apply w-2 h-2 bg-surface-gray-1;
+	}
+
+	&::-webkit-scrollbar-corner {
+		@apply bg-surface-gray-1;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		@apply rounded-full bg-surface-gray-3;
+	}
+}
+
+[data-theme='dark'] img {
+	filter: revert;
+}
+
+[role='dialog'].bg-surface-modal, [role='dialog'] .bg-surface-modal {
+	background-color: var(--surface-white);
+}

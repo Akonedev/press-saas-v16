@@ -1,0 +1,56 @@
+# =============================================================================
+# Node Exporter - Host Metrics Collection
+# =============================================================================
+# Node Exporter exposes host-level metrics (CPU, memory, disk, network)
+# Constitution Constraint: Container prefix erp-saas-cloud-c16-*
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Node Exporter
+  # ---------------------------------------------------------------------------
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: erp-saas-cloud-c16-node-exporter
+    hostname: erp-saas-cloud-c16-node-exporter
+    restart: unless-stopped
+
+    # No external port mapping - only accessible within Docker network
+    expose:
+      - "9100"
+
+    # Volumes - Access to host filesystem
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+
+    # Command - Configure collectors
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--collector.netclass.ignored-devices=^(veth.*|br.*|docker.*|virbr.*|lo)$$'
+      - '--collector.netdev.device-exclude=^(veth.*|br.*|docker.*|virbr.*|lo)$$'
+
+    # Environment
+    environment:
+      TZ: "UTC"
+
+    # Network
+    networks:
+      - erp-saas-cloud-c16-network
+
+    # Labels
+    labels:
+      com.press.selfhosted.service: "node-exporter"
+      com.press.selfhosted.description: "Host metrics exporter for Prometheus"
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  erp-saas-cloud-c16-network:
+    external: true
+    name: erp-saas-cloud-c16-network

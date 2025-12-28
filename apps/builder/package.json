@@ -1,0 +1,21 @@
+{
+    "private": true,
+    "workspaces": [
+        "frontend",
+        "frappe-ui"
+    ],
+    "type": "module",
+    "scripts": {
+        "postinstall": "cd frontend && yarn install",
+        "dev": "cd frontend && yarn dev",
+        "build": "cd frontend && yarn build"
+    },
+    "version": "0.0.0",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "dependencies": {},
+    "resolutions": {
+        "lint-staged": "^15.2.10"
+    }
+}

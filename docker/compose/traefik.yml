@@ -1,0 +1,78 @@
+# =============================================================================
+# Traefik Reverse Proxy - ERP SaaS Cloud PRESSE v16
+# =============================================================================
+# Traefik v3 provides reverse proxy, load balancing, and SSL termination
+# Constitution Constraint: Container prefix erp-saas-cloud-c16-*
+# Constitution Constraint: Ports 32380 (HTTP) and 32443 (HTTPS)
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Traefik Reverse Proxy
+  # ---------------------------------------------------------------------------
+  traefik:
+    image: traefik:v3.0
+    container_name: erp-saas-cloud-c16-traefik
+    hostname: erp-saas-cloud-c16-traefik
+    restart: unless-stopped
+
+    # Port Mapping (Constitution: 32300-32500)
+    ports:
+      - "${TRAEFIK_HTTP_PORT:-32380}:80"      # HTTP
+      - "${TRAEFIK_HTTPS_PORT:-32443}:443"    # HTTPS
+      - "${TRAEFIK_DASHBOARD_PORT:-32381}:8080"  # Dashboard (optional)
+
+    # Volumes
+    volumes:
+      # Static configuration
+      - ../config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+
+      # Dynamic configuration
+      - ../config/traefik/dynamic:/etc/traefik/dynamic:ro
+
+      # ACME certificates storage
+      - ../config/traefik/acme:/etc/traefik/acme
+
+      # Docker socket for dynamic discovery
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    # Environment
+    environment:
+      # Traefik configuration
+      TRAEFIK_API_DASHBOARD: "true"
+      TRAEFIK_API_INSECURE: "true"  # For development only
+
+      # Let's Encrypt configuration
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:-admin@platform.local}
+
+    # Health Check
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # Network
+    networks:
+      - erp-saas-cloud-c16-network
+
+    # Labels
+    labels:
+      com.press.selfhosted.service: "traefik"
+      com.press.selfhosted.description: "Reverse proxy and SSL termination"
+
+      # Traefik dashboard routing (optional)
+      traefik.enable: "true"
+      traefik.http.routers.dashboard.rule: "Host(`traefik.platform.local`)"
+      traefik.http.routers.dashboard.service: "api@internal"
+      traefik.http.routers.dashboard.entrypoints: "web"
+
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  erp-saas-cloud-c16-network:
+    external: true
+    name: erp-saas-cloud-c16-network
